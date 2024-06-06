@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "WNBA EDA Project"
 output: html_document
 date: "2024-06-06"
 ---
@@ -7,25 +7,33 @@ date: "2024-06-06"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(wehoops)
+library(wehoop)
+library(sportyR)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+wnba_pbp <- load_wnba_pbp(2023)
+wnba_shots <- wnba_pbp |> 
+  filter(shooting_play) |> 
+  # make a column to indicate the shooting team
+  mutate(shooting_team = ifelse(team_id == home_team_id, 
+                                home_team_name,
+                                away_team_name)) |> 
+  select(game_id, game_play_number, game_type = season_type,
+         desc = text, shot_type = type_text, 
+         made_shot = scoring_play, shot_value = score_value, 
+         coordinate_x, coordinate_y, shooting_team, 
+         home_team_name, away_team_name, home_score, away_score, qtr,
+         quarter_seconds_remaining = start_quarter_seconds_remaining,
+         game_seconds_remaining = start_game_seconds_remaining)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
