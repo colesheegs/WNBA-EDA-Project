@@ -1,5 +1,5 @@
 ---
-title: "Test Document"
+title: "WNBA Eda Project - Belle Schmidt"
 output: html_document
 date: "2024-06-06"
 ---
