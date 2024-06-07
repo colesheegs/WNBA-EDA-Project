@@ -10,13 +10,20 @@ wnba_shots <- read_csv("https://raw.githubusercontent.com/36-SURE/36-SURE.github
 ```
 
 ```{r}
-wnba_shots |>
+wnba_shots <- wnba_shots |>
   group_by(shooting_team) |>
-  mutate(if(shooting_team == home_team_name) {
-    HOA = "Home" }
-    else{
-      "Away"
-    }
-  )
+  mutate(home_or_away = if_else(shooting_team == home_team_name, "Home", "Away"),
+         attempted_point_value = ifelse(str_detect(desc, "Free Throw | free throw"), 1,
+                             ifelse(str_detect(desc, "three point | 20:100"), 3, 2))) 
+
+```
+
+```{r}
+wnba_shots |>
+  select(shooting_team, home_or_away, attempted_point_value, shot_value, made_or_missed) |>
+  group_by(shooting_team, home_or_away, shot_value, attempted_point_value) |>
+  summarise(count = n())
+  
+  
 ```
 
