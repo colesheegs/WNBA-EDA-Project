@@ -130,7 +130,7 @@ wnba_shots2 <-
 
 
 ```{r}
-playoff <- wnba_shots2 |> 
+playoff1 <- wnba_shots2 |> 
   select(game_type, desc, made_shot, shooter, shooter_last, shooter_first) |> 
   filter(game_type == 3) |> 
   group_by(shooter, shooter_last) |> 
@@ -142,20 +142,51 @@ playoff <- wnba_shots2 |>
   
 
 
-playoff |> 
+playoff1 |> 
   ggplot(aes(y = reorder(shooter, prop), x = prop)) +
   geom_col(fill = "orange1") +
   theme_bw() +
-  geom_label(aes(label = prop), size = 2.5) +
+  geom_label(aes(label = prop), size = 2.5, label.size = 0.5) +
   # geom_text(aes(label = shooter_last), size = 3, hjust = 2, check_overlap = TRUE) +
   labs(
     title = "Alysha Clark and A'ja Wilson Clutch Up in Playoffs",
     x = "Proportion",
     y = "Player",
     caption = "Data Courtesy of Wehoop"
-  )
+  ) +
+  theme(plot.title = element_text(hjust = -2, face= "bold"))
   
 ```
+
+
+
+```{r}
+playoff2 <- wnba_shots2 |> 
+  select(game_type, desc, made_shot, shooter, shooter_last, shooter_first) |> 
+  filter(game_type == 3) |> 
+  group_by(shooter, shooter_last) |> 
+  summarise(freq = n(),
+    total_shots_made = sum(made_shot)) |> 
+  mutate(prop = round(total_shots_made / freq, 3)) |> 
+  filter(freq >= 30, prop < 0.5) |> 
+  arrange(desc(prop))
+
+playoff2 |> 
+  ggplot(aes(y = reorder(shooter, -prop), x = prop)) +
+  geom_col(fill = "orange1") +
+  theme_bw() +
+  geom_label(aes(label = prop), size = 2.5, label.size = 0.5) +
+  # geom_text(aes(label = shooter_last), size = 3, hjust = 2, check_overlap = TRUE) +
+  labs(
+    title = "Marine Johannes and Cheyenne Parker Don't Rise to the Occasion",
+    x = "Proportion",
+    y = "Player",
+    caption = "Data Courtesy of Wehoop"
+  )  +
+  theme(plot.title = element_text(hjust = 1, face= "bold"))
+  
+```
+
 
 
 
