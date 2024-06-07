@@ -9,6 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(wehoop)
 library(sportyR)
+library(BasketballAnalyzeR)
 ```
 
 
@@ -33,7 +34,152 @@ wnba_shots <- wnba_pbp |>
 
 
 ```{r}
-
+wnba_shots |>   
+  group_by(shooting_team) |> 
+  summarise(total_shot_value = sum(shot_value)) |> 
+  filter(total_shot_value >= 1000) |> 
+  mutate(shooting_team = fct_reorder(shooting_team, total_shot_value)) |> 
+  ggplot(aes(x = shooting_team, y = total_shot_value)) +
+  geom_col(aes(fill = shooting_team)) +
+  theme_bw() + 
+  geom_label(aes(label = total_shot_value), size = 3) + 
+  geom_text(aes(label = shooting_team), size = 3, vjust = 5, check_overlap = TRUE) +
+  labs(
+    title = "New York and Vegas Scoring More",
+    x = "Teams", 
+    y = "Total Shot Values",
+    fill = "Teams",
+    caption = "Data Courtesy of Wehoop"
+  ) + 
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
 ```
 
+
+
+
+
+
+```{r}
+wnba_shots2 <- wnba_shots |> 
+  filter(shooting_team %in% c("Seattle", "Chicago", "Washington", "Atlanta", "Minnesota", "Indiana", "Los Angeles", "Connecticut", "Dallas", "Phoenix", "New York", "Las Vegas")) |> 
+  mutate(made_shot = ifelse(made_shot == "TRUE", 1, 0))
+
+wnba_shots2 |> 
+  group_by(shooting_team) |> 
+  summarise(freq = n(),
+    total_shots_made = sum(made_shot)) |> 
+  mutate(prop = round(total_shots_made / freq, 3),
+    shooting_team = fct_reorder(shooting_team, prop)) |>
+  ggplot(aes(x = shooting_team, y = prop)) +
+  geom_col(aes(fill = shooting_team)) +
+  theme_bw() +
+  geom_label(aes(label = prop), size = 2.5) +
+  geom_text(aes(label = shooting_team), size = 3, vjust = 5, check_overlap = TRUE) +
+  labs(
+    title = "Vegas with Best Goals to Shots Ratio",
+    x = "Teams",
+    y = "Proportion",
+    fill = "Teams",
+    caption = "Data Courtesy of Wehoop"
+  ) + 
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+```
+
+
+
+```{r}
+wnba_shots2 |> 
+  filter(game_type == 3) |> 
+  group_by(shooting_team) |> 
+  summarise(freq = n(),
+    total_shots_made = sum(made_shot)) |> 
+  mutate(prop = round(total_shots_made / freq, 3),
+    shooting_team = fct_reorder(shooting_team, prop)) |>
+  ggplot(aes(x = shooting_team, y = prop)) +
+  geom_col(aes(fill = shooting_team)) +
+  theme_bw() +
+  geom_label(aes(label = prop), size = 2.5) +
+  geom_text(aes(label = shooting_team), size = 3, vjust = 5, check_overlap = TRUE) +
+  labs(
+    title = "Vegas with Best Goals to Shots Ratio",
+    x = "Teams",
+    y = "Proportion",
+    fill = "Teams",
+    caption = "Data Courtesy of Wehoop"
+  ) + 
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+```
+
+
+
+```{r}
+wnba_shots2 <- 
+  wnba_shots2 |> 
+  mutate(shooter_first = word(desc, 1),
+         shooter_last = word(desc, 2), 
+         shooter = paste(shooter_first, shooter_last))
+# str_extract(procedure_text, "[A-Z][a-z]+ [0-9]+ [A-Z]+")
+# str_extract_all(desc,'^(\\S+?)_(\\S+?)_')
+# str_extract(desc, "\\s{2}"
+# str_extract(species_location, "[^_]+_[^_]+")
+```
+
+
+
+```{r}
+playoff <- wnba_shots2 |> 
+  select(game_type, desc, made_shot, shooter, shooter_last, shooter_first) |> 
+  filter(game_type == 3) |> 
+  group_by(shooter, shooter_last) |> 
+  summarise(freq = n(),
+    total_shots_made = sum(made_shot)) |> 
+  mutate(prop = round(total_shots_made / freq, 3)) |> 
+  filter(freq >= 30, prop > 0.5) |> 
+  arrange(desc(prop))
+  
+
+
+playoff |> 
+  ggplot(aes(y = reorder(shooter, prop), x = prop)) +
+  geom_col(fill = "orange1") +
+  theme_bw() +
+  geom_label(aes(label = prop), size = 2.5) +
+  # geom_text(aes(label = shooter_last), size = 3, hjust = 2, check_overlap = TRUE) +
+  labs(
+    title = "Alysha Clark and A'ja Wilson Clutch Up in Playoffs",
+    x = "Proportion",
+    y = "Player",
+    caption = "Data Courtesy of Wehoop"
+  )
+  
+```
+
+
+
+```{r}
+# Probably dont need this
+
+# wnba_shots2 |> 
+#   filter(game_type == 3) |> 
+#   group_by(shooting_team) |> 
+#   summarise(total_shot_value = sum(shot_value)) |> 
+#   mutate(shooting_team = fct_reorder(shooting_team, total_shot_value)) |> 
+#   ggplot(aes(x = shooting_team, y = total_shot_value)) +
+#   geom_col(aes(fill = shooting_team)) +
+#   theme_bw() + 
+#   geom_label(aes(label = total_shot_value), size = 3) + 
+#   geom_text(aes(label = shooting_team), size = 3, vjust = 5, check_overlap = TRUE) +
+#   labs(
+#     title = "New York and Vegas Scoring More",
+#     x = "Teams", 
+#     y = "Total Shot Values",
+#     fill = "Teams",
+#     caption = "Data Courtesy of Wehoop"
+#   ) + 
+#   theme(axis.text.x=element_blank(),
+#         axis.ticks.x=element_blank())
+```
 
