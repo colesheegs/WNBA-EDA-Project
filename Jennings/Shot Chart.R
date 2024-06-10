@@ -3,10 +3,12 @@
 
 ## Starter Code
 library(tidyverse)
+# install.packages("wehoop")
+library(wehoop)
 wnba_shots <- read_csv("https://raw.githubusercontent.com/36-SURE/36-SURE.github.io/main/data/wnba_shots.csv")
 
 ## Structure
-str(wnba_shots)
+(wnba_shots)
 
 ## shot_type variable
 wnba_shots |> 
@@ -56,7 +58,7 @@ wnba_shots <- wnba_shots |>
 
 ## Create A'Ja Wilson Shot Chart
 wilson <- wnba_shots |> 
-  filter(game_type == 3 & shooting_team == "Las Vegas" & abs(coordinate_x) >= 10 & str_like(desc, "A'ja Wilson%")) |> 
+  filter(game_type == 2 & shooting_team == "Las Vegas" & abs(coordinate_x) >= 10 & str_like(desc, "A'ja Wilson%")) |> 
   mutate(coordinate_x = abs(coordinate_x),
          player = str_extract(desc, "A'ja Wilson")) |> 
   slice(-grep("^Free Throw", shot_type))
@@ -76,10 +78,74 @@ sportyR::geom_basketball("WNBA", xlim = c(0, 47)) +
                   geom = "polygon", contour = TRUE, bins = 50, alpha = .5) +
   geom_point(wilson, mapping = aes(coordinate_x, coordinate_y, color = made_shot), alpha = 0.8, size = 3)
 
+
+## Built in wehoop function
+glimpse(shot_chart)
+
+shot_chart <- wehoop::wnba_shotchartdetail()$Shot_Chart_Detail
+
+summary(as.numeric(shot_chart$LOC_X))
+
+hist(as.numeric(shot_chart$LOC_X))
+
+summary(as.numeric(shot_chart$LOC_Y))
+
+hist(as.numeric(shot_chart$LOC_Y))
+
+# Convert units
+convert_shot <- shot_chart |> 
+  mutate(LOC_X = as.numeric(LOC_X),
+      LOC_Y = as.numeric(LOC_Y),
+      LOC_X_ft = LOC_X / 3,
+      LOC_Y_ft = LOC_Y / 3)
+
+convert_shot |> 
+  ggplot(aes(LOC_X, LOC_Y)) +
+  geom_point()
+
+wilson_sea <- wilson |> 
+  filter(home_team_name == "Seattle")
+
+convert_shot |> 
+  mutate(LOC_X_ft = LOC_X / 12,
+         LOX_Y_FT = LOC_Y / 12) |> 
+  ggplot(aes(LOC_X, LOC_Y)) +
+  geom_point()
+
+convert_shot |> 
+  mutate(LOC_X_ft = LOC_X / 12,
+         LOC_Y_ft = LOC_Y / 12) |> 
+  ggplot(aes(LOC_X_ft, LOC_Y_ft)) +
+  geom_point()
+
+geom_basketball(league = "NBA", display_range = "Offense", rotation = 270, xtrans = 43) +
+  ggplot(convert_shot, aes(LOC_X_ft, LOC_Y_ft)) +
+  geom_point()
+  
+wehoop::wnba_shotchartdetail()
+
+
+wilson__shot <- shot_chart |> 
+  mutate(
+    LOC_X = as.numeric(LOC_X),
+    LOC_Y = as.numeric(LOC_Y),
+    LOC_X = abs(LOC_X),
+    SHOT_MADE_FLAG = factor(as.numeric(SHOT_MADE_FLAG))
+    ) |> 
+  filter(abs(LOC_X) >= 10)
+
 sportyR::geom_basketball("WNBA", xlim = c(0, 47)) +
-  stat_density_2d(sabrina, mapping = aes(coordinate_x, coordinate_y, fill = made_shot), 
-                  geom = "polygon", contour = TRUE, bins = 3, alpha = .5) +
-  geom_point(sabrina, mapping = aes(coordinate_x, coordinate_y, color = made_shot), alpha = 0.8, size = 3)
+  geom_point(wilson, mapping = aes(coordinate_x, coordinate_y, color = made_shot), alpha = 0.8, size = 3) +
+  scale_color_manual(values = c("firebrick", "green3"))
+
+
+
+
+
+
+
+
+
 
 ## heat map does not work well with 3-point players
 ## manually set court locations and use if() to set 1 or 0 for each location and added them up
@@ -212,11 +278,63 @@ sportyR::geom_basketball("WNBA", xlim = c(0, 47), ylim = c(-25, 25)) +
   geom_path(data = bot_arc, aes(x, y), linewidth = 1, color = "black")
 
 
+## May possibly work
+wnba_shots |> 
+  filter(game_type == 3 & shooting_team == "New York" 
+         & abs(coordinate_x) >= 10 & str_like(desc, "Sabrina Ionescu%") &
+           coordinate_x >= 28 & coordinate_x <= 47 &
+           coordinate_y >= -8 & coordinate_y <= 8) |> 
+  mutate(coordinate_x = abs(coordinate_x),
+         player = str_extract(desc, "Sabrina Ionescu"),
+         paint = ifelse(made_shot == TRUE, 1, 0)) |> 
+  slice(-grep("^Free Throw", shot_type)) |> 
+  summarize(paint_FG = sum(paint) / nrow())
 
+## Group by shot type
+### Shot type manipulation
+#### layups - all layups are in the paint
+layups <- wnba_shots |> 
+  filter(game_type == 3 & shooting_team == "New York" 
+         & abs(coordinate_x) >= 10 & str_like(desc, "Sabrina Ionescu%")) |> 
+  mutate(coordinate_x = abs(coordinate_x),
+         player = str_extract(desc, "Sabrina Ionescu")) |> 
+  slice(grep("Layup", shot_type))
+
+
+sportyR::geom_basketball("WNBA", xlim = c(0, 47), ylim = c(-25, 25)) +
+  # top corner three
+  geom_path(data = top_corner_three, aes(x, y), linewidth = 1, color = "black") +
+  # bottom corner three
+  geom_path(data = bottom_corner_three, aes(x, y), linewidth = 1, color = "black") +
+  # paint
+  geom_path(data = paint, aes(x, y), linewidth = 1, color = "black") +
+  geom_point(data = layups, aes(coordinate_x, coordinate_y, color = made_shot), alpha = 0.5, size = 1.5)
+
+
+#### threes
+threes <- wnba_shots |> 
+  filter(game_type == 3 & shooting_team == "New York" 
+         & abs(coordinate_x) >= 10 & str_like(desc, "Sabrina Ionescu%")) |> 
+  mutate(coordinate_x = abs(coordinate_x),
+         player = str_extract(desc, "Sabrina Ionescu"),
+         type = ifelse(grepl("three point", desc), "Three-Pointer", ""),
+         type = ifelse(grepl("three point", desc), "Three-Pointer", "")))
+
+
+sportyR::geom_basketball("WNBA", xlim = c(0, 47), ylim = c(-25, 25)) +
+  # top corner three
+  geom_path(data = top_corner_three, aes(x, y), linewidth = 1, color = "black") +
+  # bottom corner three
+  geom_path(data = bottom_corner_three, aes(x, y), linewidth = 1, color = "black") +
+  # paint
+  geom_path(data = paint, aes(x, y), linewidth = 1, color = "black") +
+  geom_point(data = threes, aes(coordinate_x, coordinate_y, color = made_shot), alpha = 0.5, size = 1.5)
 
 
 
 ## Create Sabrina Ionescu Shot Chart
+library(viridis)
+
 
 sabrina <- wnba_shots |> 
   filter(game_type == 3 & shooting_team == "New York" 
@@ -230,10 +348,34 @@ sportyR::geom_basketball("WNBA", xlim = c(0, 47)) +
   scale_color_manual(values = c("firebrick", "green3"))
 
 sportyR::geom_basketball("WNBA", xlim = c(0, 47)) +
-  geom_density_2d_filled(sabrina, mapping = aes(coordinate_x, coordinate_y, fill = made_shot), 
-                         contour_var = "ndensity", breaks = seq(0.1, 1.0, length.out = 10), alpha = .5) +
+  stat_density_2d(sabrina, mapping = aes(coordinate_x, coordinate_y, fill = made_shot), 
+                  geom = "polygon", contour = TRUE, bins = 3, alpha = .5) +
   geom_point(sabrina, mapping = aes(coordinate_x, coordinate_y, color = made_shot), alpha = 0.8, size = 3)
 
+sportyR::geom_basketball("WNBA", xlim = c(0, 47)) +
+  geom_density_2d_filled(SEA, mapping = aes(x = coordinate_x, y = coordinate_y, fill = after_stat(level)), 
+                         contour_var = "ndensity", breaks = seq(0.1, 1.0, length.out = 10), alpha = .5) +
+  #geom_point(IND, mapping = aes(x = coordinate_x, y = coordinate_y, color = made_shot)) + 
+  #scale_fill_brewer(palette = "RdGy", aesthetics = c("fill", "color")) +
+  scale_fill_viridis(aesthetics = c("fill", "color"), discrete = TRUE) +
+  theme(legend.position = "none")
+
+
+####### BY TEAM HEATMAP
+######## REGULAR SEASON
+team_heat_map <- wnba_shots |> 
+  filter(game_type == 2 & abs(coordinate_x) >= 10) |> 
+  mutate(coordinate_x = abs(coordinate_x)) |> 
+  slice(-grep("^Free Throw", shot_type))
+
+sportyR::geom_basketball("WNBA", xlim = c(0, 47)) +
+  geom_density_2d_filled(team_heat_map, mapping = aes(x = coordinate_x, y = coordinate_y, fill = after_stat(level)), 
+                         contour_var = "ndensity", breaks = seq(0.1, 1.0, length.out = 10), alpha = .5) +
+  #geom_point(IND, mapping = aes(x = coordinate_x, y = coordinate_y, color = made_shot)) + 
+  #scale_fill_brewer(palette = "RdGy", aesthetics = c("fill", "color")) +
+  scale_fill_viridis(aesthetics = c("fill", "color"), discrete = TRUE) +
+  theme(legend.position = "none") + 
+  facet_wrap(~ shooting_team)
 
 ## Las Vegas Aces
 LVA <- wnba_shots |> 
