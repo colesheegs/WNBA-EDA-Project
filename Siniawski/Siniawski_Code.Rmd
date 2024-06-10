@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(wehoop)
 library(sportyR)
-library(BasketballAnalyzeR)
+library(paletteer)
 ```
 
 
@@ -69,6 +69,8 @@ wnba_shots |>
 wnba_shots2 <- wnba_shots |> 
   filter(shooting_team %in% c("Seattle", "Chicago", "Washington", "Atlanta", "Minnesota", "Indiana", "Los Angeles", "Connecticut", "Dallas", "Phoenix", "New York", "Las Vegas")) |> 
   mutate(made_shot = ifelse(made_shot == "TRUE", 1, 0))
+
+wnba_shots2 <- wnba_shots2[!grepl('Free Throw', wnba_shots2$shot_type),]
 
 wnba_shots2 |> 
   group_by(shooting_team) |> 
@@ -147,7 +149,6 @@ playoff1 <- wnba_shots2 |>
   filter(freq >= 30, prop > 0.5) |> 
   arrange(desc(prop))
   
-
 
 playoff1 |> 
   ggplot(aes(y = reorder(shooter, prop), x = prop)) +
@@ -294,6 +295,16 @@ cluster_playoff2 |>
   )
 ```
 
+
+
+
+```{r}
+# Geom hex for a potential heat map
+wnba_shots2 |> 
+  ggplot(aes(x = coordinate_x, y = coordinate_y)) +
+  geom_hex(bins = 40) + 
+  paletteer::scale_fill_paletteer_c("viridis::plasma")
+```
 
 
 
