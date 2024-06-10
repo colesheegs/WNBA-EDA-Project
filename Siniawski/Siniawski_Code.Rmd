@@ -29,6 +29,10 @@ wnba_shots <- wnba_pbp |>
          home_team_name, away_team_name, home_score, away_score, qtr,
          quarter_seconds_remaining = start_quarter_seconds_remaining,
          game_seconds_remaining = start_game_seconds_remaining)
+
+shot_chart <- wnba_shotchartdetail()
+
+shot_chart <- shot_chart$Shot_Chart_Detail
 ```
 
 
@@ -52,7 +56,8 @@ wnba_shots |>
   ) + 
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
-        legend.position = "none")
+        legend.position = "none",
+        plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
 
 
@@ -84,7 +89,8 @@ wnba_shots2 |>
   ) + 
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
-        legend.position = "none")
+        legend.position = "none",
+        plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
 
 
@@ -110,7 +116,8 @@ wnba_shots2 |>
   ) + 
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
-        legend.position = "none")
+        legend.position = "none",
+        plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
 
 
@@ -186,6 +193,56 @@ playoff2 |>
   theme(plot.title = element_text(hjust = 1, face= "bold"))
   
 ```
+
+
+
+```{r}
+# Clustering
+set.seed(10)
+
+# creating new dataset
+cluster_playoff <- wnba_shots2 |> 
+  select(game_type, desc, made_shot, shooter, shooter_last, shooter_first) |> 
+  filter(game_type == 3) |> 
+  group_by(shooter) |> 
+  summarise(freq = n(),
+    total_shots_made = sum(made_shot)) |> 
+  mutate(prop = round(total_shots_made / freq, 3))
+  
+# normalizing the data
+cluster_playoff <- cluster_playoff |> 
+  mutate(
+    std_shot_made = as.numeric(scale(total_shots_made, center = TRUE, scale = TRUE)),
+    std_shots = as.numeric(scale(freq, center = TRUE, scale = TRUE))
+  )
+
+std_kmeans <- cluster_playoff |> 
+  select(std_shot_made, std_shots) |> 
+  kmeans(algorithm = "Lloyd", centers = 4, nstart = 30)
+
+cluster_playoff |>
+  mutate(
+    player_clusters = as.factor(std_kmeans$cluster)
+  ) |>
+  ggplot(aes(x = total_shots_made, y = freq,
+             color = player_clusters)) +
+  geom_point(size = 2, alpha = 0.4) + 
+  ggthemes::scale_color_colorblind() +
+  theme(legend.position = "bottom") +
+  coord_fixed() +
+  labs(
+    x = "Total Shots Made",
+    y = "Shots Attempted",
+    color = "Player Clusters",
+    title = "Player Impact in Playoffs"
+  ) +
+   theme(
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5, face= "bold")
+  )
+
+```
+
 
 
 
