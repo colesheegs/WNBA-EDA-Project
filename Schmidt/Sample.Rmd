@@ -7,23 +7,82 @@ date: "2024-06-06"
 ```{r setup, include=FALSE}
 library(tidyverse)
 wnba_shots <- read_csv("https://raw.githubusercontent.com/36-SURE/36-SURE.github.io/main/data/wnba_shots.csv")
+
+#View(wnba_shots)
 ```
 
+# Removed The All Star Game & Added Shooter Variable
 ```{r}
 wnba_shots <- wnba_shots |>
-  group_by(shooting_team) |>
-  mutate(home_or_away = if_else(shooting_team == home_team_name, "Home", "Away"),
-         attempted_point_value = ifelse(str_detect(desc, "Free Throw | free throw"), 1,
-                             ifelse(str_detect(desc, "three point | 20:100"), 3, 2))) 
+  filter(shooting_team != "Team Stewart" & shooting_team != "Team Wilson") |> 
+  mutate(shooter_first_name = word(desc, 1),
+         shooter_last_name = word(desc, 2),
+         shooter = paste(shooter_first_name, shooter_last_name),
+         score_differential = home_score - away_score) |>
+  select(! c(shooter_first_name, shooter_last_name))
 
+#View(wnba_shots)
 ```
+
+
+# Overarching Question - How does the time in the game impact each team's performance? 
+
+
+## Shooting in the last 2 minutes of the Second Quarter
 
 ```{r}
 wnba_shots |>
-  select(shooting_team, home_or_away, attempted_point_value, shot_value, made_or_missed) |>
-  group_by(shooting_team, home_or_away, shot_value, attempted_point_value) |>
-  summarise(count = n())
+  filter(qtr == 2 & quarter_seconds_remaining <= 120.0) |>
+  arrange(quarter_seconds_remaining)
+```
+
+
+## Shooting in the last 2 minutes of the Fourth Quarter
+```{r}
+wnb
+a_shots |>
+  filter(qtr == 4 & quarter_seconds_remaining <= 120.0) |>
+  arrange(quarter_seconds_remaining)
+```
+
+## Games With Close Scores (3 points or less) Down To The Final Possession
+```{r}
+end_of_game_shots <- wnba_shots |>
+  filter(game_seconds_remaining < 5 & score_differential %in% c(-3, -2, -1, 0, 1, 2, 3)) 
   
-  
+```
+
+
+## Number of Shots In The Last 5 Seconds Per Close Game
+```{r}
+ end_of_game_shots |> 
+  count(game_id) |> 
+  arrange(-n)
+```
+
+## Teams Who Shot Best In Close Games
+```{r}
+shots_made_data <- end_of_game_shots |>
+  mutate(made_shot = if_else(made_shot == "TRUE", 1, 0)) |> 
+  filter(made_shot == 1) |> 
+  group_by(shooting_team) |> 
+  summarise(shots_made = n())
+
+shots_taken_data <- end_of_game_shots |>
+  group_by(shooting_team) |> 
+  summarise(shots_taken = n()) 
+ 
+temp_data <- left_join(shots_taken_data, shots_made_data)
+
+temp_data[is.na(temp_data)] <- 0
+
+shooting_percentage <- temp_data |> 
+  mutate(shot_percentage = round(shots_made / shots_taken, 3))  
+
+shooting_percentage
+```
+
+```{r}
+
 ```
 

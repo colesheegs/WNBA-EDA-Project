@@ -1,0 +1,31 @@
+```{r}
+# wnba_shots <- wnba_shots |>
+#   group_by(shooting_team) |>
+#   mutate(
+#     home_or_away = if_else(shooting_team == home_team_name, "Home", "Away"),
+#     distance = as.numeric(str_extract(desc, "\\d{2}")),
+#     attempted_point_value = if_else(
+#       str_detect(desc, "[Ff]ree [Tt]hrow"), 1,
+#       if_else(
+#         str_detect(desc, "three point") | (distance > 21 & !is.na(distance)), 3, 2
+#       )
+#     )
+#   )
+
+# 
+# View(wnba_shots)
+# 
+# wnba_shots |> 
+#  filter(shot_value != attempted_point_value & shot_value > 0) |>
+#   select(shooting_team, desc, shot_value, attempted_point_value)
+
+```
+
+```{r}
+# wnba_shots |>
+#   select(shooting_team, home_or_away, attempted_point_value, shot_value) |>
+#   group_by(shooting_team, home_or_away, shot_value, attempted_point_value) |>
+#   summarise(count = n())
+#   
+  
+```
