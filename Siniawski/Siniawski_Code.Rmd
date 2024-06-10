@@ -7,6 +7,7 @@ date: "2024-06-06"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(ggthemes)
 library(wehoop)
 library(sportyR)
 library(paletteer)
@@ -138,6 +139,10 @@ wnba_shots2 <-
 
 
 
+## Playoff Shooting Percentages by Player
+
+
+
 ```{r}
 playoff1 <- wnba_shots2 |> 
   select(game_type, desc, made_shot, shooter, shooter_last, shooter_first) |> 
@@ -146,7 +151,7 @@ playoff1 <- wnba_shots2 |>
   summarise(freq = n(),
     total_shots_made = sum(made_shot)) |> 
   mutate(prop = round(total_shots_made / freq, 3)) |> 
-  filter(freq >= 30, prop > 0.5) |> 
+  filter(freq >= 1, prop > 0.5) |> 
   arrange(desc(prop))
   
 
@@ -176,13 +181,12 @@ playoff2 <- wnba_shots2 |>
   summarise(freq = n(),
     total_shots_made = sum(made_shot)) |> 
   mutate(prop = round(total_shots_made / freq, 3)) |> 
-  filter(freq >= 30, prop < 0.5) |> 
+  filter(freq >= 10, prop < 0.3) |> 
   arrange(desc(prop))
 
 playoff2 |> 
   ggplot(aes(y = reorder(shooter, -prop), x = prop)) +
-  geom_col(fill = "orange1") +
-  theme_bw() +
+  geom_col(fill = "orange") +
   geom_label(aes(label = prop), size = 2.5, label.size = 0.5) +
   # geom_text(aes(label = shooter_last), size = 3, hjust = 2, check_overlap = TRUE) +
   labs(
@@ -197,8 +201,11 @@ playoff2 |>
 
 
 
+## Clustering
+
+
+
 ```{r}
-# Clustering
 set.seed(10)
 
 # creating new dataset
@@ -305,6 +312,8 @@ wnba_shots2 |>
   geom_hex(bins = 40) + 
   paletteer::scale_fill_paletteer_c("viridis::plasma")
 ```
+
+
 
 
 
