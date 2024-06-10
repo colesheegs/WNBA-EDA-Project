@@ -39,20 +39,20 @@ wnba_shots |>
   summarise(total_shot_value = sum(shot_value)) |> 
   filter(total_shot_value >= 1000) |> 
   mutate(shooting_team = fct_reorder(shooting_team, total_shot_value)) |> 
-  ggplot(aes(x = shooting_team, y = total_shot_value)) +
+  ggplot(aes(y = shooting_team, x = total_shot_value)) +
   geom_col(aes(fill = shooting_team)) +
   theme_bw() + 
   geom_label(aes(label = total_shot_value), size = 3) + 
-  geom_text(aes(label = shooting_team), size = 3, vjust = 5, check_overlap = TRUE) +
   labs(
     title = "New York and Vegas Scoring More",
-    x = "Teams", 
-    y = "Total Shot Values",
+    x = "Total Shot Values", 
+    y = "Teams",
     fill = "Teams",
     caption = "Data Courtesy of Wehoop"
   ) + 
   theme(axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())
+        axis.ticks.x=element_blank(),
+        legend.position = "none")
 ```
 
 
@@ -71,20 +71,20 @@ wnba_shots2 |>
     total_shots_made = sum(made_shot)) |> 
   mutate(prop = round(total_shots_made / freq, 3),
     shooting_team = fct_reorder(shooting_team, prop)) |>
-  ggplot(aes(x = shooting_team, y = prop)) +
+  ggplot(aes(y = shooting_team, x = prop)) +
   geom_col(aes(fill = shooting_team)) +
   theme_bw() +
   geom_label(aes(label = prop), size = 2.5) +
-  geom_text(aes(label = shooting_team), size = 3, vjust = 5, check_overlap = TRUE) +
   labs(
-    title = "Vegas with Best Goals to Shots Ratio",
-    x = "Teams",
-    y = "Proportion",
+    title = "Vegas Racks Up the Points",
+    x = "Proportion",
+    y = "Teams",
     fill = "Teams",
     caption = "Data Courtesy of Wehoop"
   ) + 
   theme(axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())
+        axis.ticks.x=element_blank(),
+        legend.position = "none")
 ```
 
 
@@ -97,20 +97,20 @@ wnba_shots2 |>
     total_shots_made = sum(made_shot)) |> 
   mutate(prop = round(total_shots_made / freq, 3),
     shooting_team = fct_reorder(shooting_team, prop)) |>
-  ggplot(aes(x = shooting_team, y = prop)) +
+  ggplot(aes(y = shooting_team, x = prop)) +
   geom_col(aes(fill = shooting_team)) +
   theme_bw() +
   geom_label(aes(label = prop), size = 2.5) +
-  geom_text(aes(label = shooting_team), size = 3, vjust = 5, check_overlap = TRUE) +
   labs(
-    title = "Vegas with Best Goals to Shots Ratio",
-    x = "Teams",
-    y = "Proportion",
+    title = "Vegas Also Banking Points in the Playoffs",
+    x = "Proportion",
+    y = "Teams",
     fill = "Teams",
     caption = "Data Courtesy of Wehoop"
   ) + 
   theme(axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())
+        axis.ticks.x=element_blank(),
+        legend.position = "none")
 ```
 
 
