@@ -55,16 +55,8 @@ num_games <- end_of_game_shots |>
   group_by(game_id) |> 
   slice_head() 
   
-  
 ```
 
-
-## Number of Shots In The Last 30 Seconds Per Close Game
-```{r}
- end_of_game_shots |> 
-  count(game_id) |> 
-  arrange(-n)
-```
 
 ## Teams Who Shot Best In Close Games (30 Seconds)
 ```{r}
@@ -90,28 +82,32 @@ shots_made_data1 <- end_of_game_shots |>
  temp_data[is.na(temp_data)] <- 0
 
  shooting_percentage <- temp_data |>
-   mutate(shot_percentage = round(shots_made / shots_taken, 3))
+   mutate(shot_percentage = round(shots_made / shots_taken, 3),
+          total_shots = shots_taken + shots_made)
 
  shooting_percentage
 ```
-## Number of Games That Came Down To Final Possession Per Team (Does Not Include Teams With 0)
+
+## Number of Close Games (6 points or less with 30 seconds left) Per Team
 
 ```{r}
-ggplot(end_of_game_shots, aes(x = shooting_team, fill = shooting_team)) +
+ggplot(num_games, aes(x = fct_rev(fct_infreq(shooting_team)), fill = shooting_team)) +
   geom_bar() +
   coord_flip() + 
   scale_fill_manual(values = c("#C8102E", "#418FDE", "#643335", "#C4D600", "#FFCD00", "#000000", "#702F8A", "#236192", "#003DA5","#CB6015","#2C5234", "#0C2340")) 
   
 ```
 
-## Graph For Shooting Percentage of WNBA Teams In Final 30 Seconds of Close Games
+## Graph For Number of WNBA Teams In Final 30 Seconds of Close Games
 
 ```{r}
 shots_made_data1 |> 
-  ggplot(aes(x = shooting_team, fill = made_shot)) +
-  geom_bar() +
-  theme_bw() +
-   theme(axis.text.x=element_text(angle=45, hjust=0.9)) 
+  ggplot(aes(x = fct_infreq(shooting_team), fill = made_shot))  +
+  geom_bar(color = "black") +
+  theme(axis.text.x=element_text(angle=45, hjust=0.9)) +
+  scale_fill_manual(values = c("#E77500", "white")) +
+  coord_flip()
+  
 ```
 
 
@@ -185,6 +181,7 @@ ggplot(close_game_appearances, aes(x = reorder(team_name, num_close_games), y = 
   scale_fill_manual(values = c("#C8102E", "#418FDE", "#643335", "#C4D600", "#FFCD00", "#000000", "#702F8A", "#236192", "#003DA5","#CB6015","#2C5234", "#0C2340")) +
   coord_flip()
 ```
+
 ## Number of Home vs. Away Games That Came Down To Final Possession Per Team 
 ```{r}
 
@@ -193,11 +190,16 @@ close_game_appearances2 <- close_game_appearances |>
 
 library(reshape2)
 df_long <- melt(close_game_appearances2)
-ggplot(df_long, aes(team_name, value, fill = variable))+
-     geom_bar(stat="identity", position="dodge") +
-  theme_bw() +
-  theme(axis.text.x=element_text(angle=45, hjust=0.9)) +
-  scale_fill_manual(values = c("lightblue", "pink"))
+
+df_long
+
+library(ggplot2)
+
+ggplot(df_long, aes(x = team_name, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge", color = "black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9)) +
+  scale_fill_manual(values = c("white", "#E77500"))
+
 ```
 
 ## Teams Who Shot Best In Close Games That Came Down To The Final Possession
@@ -226,7 +228,7 @@ final_shooting_percentage
 ## Number of Shots That Came Down To Final Possession Per Team (Does Not Include Teams With 0)
 
 ```{r}
-ggplot(final_possession, aes(x = shooting_team, fill = shooting_team)) +
+ggplot(final_possession, aes(x = fct_infreq(shooting_team), fill = shooting_team)) +
   geom_bar() +
   coord_flip() +
   scale_fill_manual(values = c("#C8102E", "#418FDE", "#C4D600", "#FFCD00", "#702F8A",  "#003DA5","#CB6015", "#2C5234", "#0C2340"  )) 
