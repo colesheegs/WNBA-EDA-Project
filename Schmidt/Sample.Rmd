@@ -102,7 +102,7 @@ ggplot(num_games, aes(x = fct_rev(fct_infreq(shooting_team)), fill = shooting_te
 
 ```{r}
 shots_made_data1 |> 
-  ggplot(aes(x = fct_infreq(shooting_team), fill = made_shot))  +
+  ggplot(aes(x = fct_rev(fct_infreq(shooting_team)), fill = made_shot))  +
   geom_bar(color = "black") +
   theme(axis.text.x=element_text(angle=45, hjust=0.9)) +
   scale_fill_manual(values = c("#E77500", "white")) +
@@ -228,7 +228,7 @@ final_shooting_percentage
 ## Number of Shots That Came Down To Final Possession Per Team (Does Not Include Teams With 0)
 
 ```{r}
-ggplot(final_possession, aes(x = fct_infreq(shooting_team), fill = shooting_team)) +
+ggplot(final_possession, aes(x = fct_rev(fct_infreq(shooting_team)), fill = shooting_team)) +
   geom_bar() +
   coord_flip() +
   scale_fill_manual(values = c("#C8102E", "#418FDE", "#C4D600", "#FFCD00", "#702F8A",  "#003DA5","#CB6015", "#2C5234", "#0C2340"  )) 
