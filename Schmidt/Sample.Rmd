@@ -12,6 +12,7 @@ wnba_shots <- read_csv("https://raw.githubusercontent.com/36-SURE/36-SURE.github
 #View(wnba_shots)
 ```
 
+
 # Removed The All Star Game & Added Shooter Variable
 ```{r}
 wnba_shots <- wnba_shots |>
@@ -19,8 +20,11 @@ wnba_shots <- wnba_shots |>
   mutate(shooter_first_name = word(desc, 1),
          shooter_last_name = word(desc, 2),
          shooter = paste(shooter_first_name, shooter_last_name),
-         score_differential = home_score - away_score) |>
-  select(! c(shooter_first_name, shooter_last_name))
+         score_differential = home_score - away_score, 
+         free_throw = if_else(str_detect(shot_type, "[Ff]ree [Tt]hrow - 3 of"), 3,
+       if_else(str_detect(shot_type, "[Ff]ree [Tt]hrow - 2 of"), 2,
+               if_else(str_detect(shot_type, "[Ff]ree [Tt]hrow - 1 of") | str_detect(shot_type, "[Tt]echnical"), 1, 0)))) |>
+  select(! c(shooter_first_name, shooter_last_name)) 
 
 #View(wnba_shots)
 ```
@@ -44,17 +48,52 @@ wnba_shots |>
   filter(qtr == 4 & quarter_seconds_remaining <= 120.0) |>
   arrange(quarter_seconds_remaining)
 ```
+
 # Last Thirty Seconds
 
-## Games With Close Scores (6 points or less) In The Last 30 Seconds
+## Games With Close Scores (6 points or less) At Some Point In The Last 30 Seconds
 ```{r}
+# End of game shots where the score differential was less than 6 after the shot was taken
 end_of_game_shots <- wnba_shots |>
-  filter(game_seconds_remaining < 30 & score_differential %in% c(-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6)) 
+  filter(game_seconds_remaining <= 30 & score_differential %in% c(-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6)) 
 
-num_games <- end_of_game_shots |> 
+
+# Games That Had A Close Score At Some Point Within the last 30 seconds; The highest time where a shot occurred
+close_games <- end_of_game_shots |> 
   group_by(game_id) |> 
-  slice_head() 
-  
+  slice_max(game_seconds_remaining) |> 
+  arrange(-free_throw) |> 
+  slice_head() |>
+  select(game_id, home_team_name, away_team_name, score_differential)
+
+
+# The last shot of the every game 
+final_score <- wnba_shots |> 
+  group_by(game_id) |> 
+  slice_min(game_seconds_remaining) |> 
+  arrange(free_throw) |> 
+  slice_head() |> 
+  rename(final_score_differential = score_differential) |> 
+  select(game_id, final_score_differential)
+
+# Score Change From First Shot In Last 30 Seconds Where Score is 
+close_games_observing <- left_join(close_games, final_score) |> 
+  mutate(home_team_outcome =  
+ if_else(score_differential > 0 & final_score_differential > 0 & score_differential == final_score_differential, "Kept Same Lead",
+ if_else(score_differential > 0 & final_score_differential > 0 & score_differential > final_score_differential, "Kept Lead - Decreased",
+ if_else(score_differential > 0 & final_score_differential > 0, "Kept Lead - Increased",
+ if_else(score_differential > 0 & final_score_differential <= 0, "Lost Lead", 
+ if_else(score_differential < 0 & final_score_differential < 0 & score_differential == final_score_differential, "No Comeback",
+ if_else(score_differential < 0 & final_score_differential < 0 & score_differential > final_score_differential, "Comeback - Not Enough",
+ if_else(score_differential > 0 & final_score_differential <= 0, "Lost Lead","Took Lead"))))))))
+
+close_games_observing
+
+
+
+
+
+
 ```
 
 
@@ -94,7 +133,13 @@ shots_made_data1 <- end_of_game_shots |>
 ggplot(num_games, aes(x = fct_rev(fct_infreq(shooting_team)), fill = shooting_team)) +
   geom_bar() +
   coord_flip() + 
-  scale_fill_manual(values = c("#C8102E", "#418FDE", "#643335", "#C4D600", "#FFCD00", "#000000", "#702F8A", "#236192", "#003DA5","#CB6015","#2C5234", "#0C2340")) 
+  scale_fill_manual(values = c("#C8102E", "#418FDE", "#643335", "#C4D600", "#FFCD00", "#000000", "#702F8A", "#236192", "#003DA5","#CB6015","#2C5234", "#0C2340")) +
+  labs(title = "Number of Close Games Per Team", 
+       y = "Number of Close Games",
+       x = "WNBA Team",
+       subtitle = "Close games is defined as a score differential of 6 or less in the last 30 seconds") +
+  theme(legend.position = "none")
+  
   
 ```
 
@@ -106,7 +151,11 @@ shots_made_data1 |>
   geom_bar(color = "black") +
   theme(axis.text.x=element_text(angle=45, hjust=0.9)) +
   scale_fill_manual(values = c("#E77500", "white")) +
-  coord_flip()
+  coord_flip() +
+  labs(title = "Shots Made vs. Missed Per WNBA Team",
+       x = "WNBA Team",
+       y = "Number of Shots"
+       )
   
 ```
 
