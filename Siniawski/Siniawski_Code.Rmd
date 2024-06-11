@@ -31,9 +31,9 @@ wnba_shots <- wnba_pbp |>
          quarter_seconds_remaining = start_quarter_seconds_remaining,
          game_seconds_remaining = start_game_seconds_remaining)
 
-shot_chart <- wnba_shotchartdetail()
-
-shot_chart <- shot_chart$Shot_Chart_Detail
+# shot_chart <- wnba_shotchartdetail()
+# 
+# shot_chart <- shot_chart$Shot_Chart_Detail
 ```
 
 
@@ -73,6 +73,16 @@ wnba_shots2 <- wnba_shots |>
 
 wnba_shots2 <- wnba_shots2[!grepl('Free Throw', wnba_shots2$shot_type),]
 
+wnba_shots2 <- 
+  wnba_shots2 |> 
+  mutate(shooter_first = word(desc, 1),
+         shooter_last = word(desc, 2), 
+         shooter = paste(shooter_first, shooter_last))
+```
+
+
+
+```{r}
 wnba_shots2 |> 
   group_by(shooting_team) |> 
   summarise(freq = n(),
@@ -125,20 +135,6 @@ wnba_shots2 |>
 
 
 
-```{r}
-wnba_shots2 <- 
-  wnba_shots2 |> 
-  mutate(shooter_first = word(desc, 1),
-         shooter_last = word(desc, 2), 
-         shooter = paste(shooter_first, shooter_last))
-# str_extract(procedure_text, "[A-Z][a-z]+ [0-9]+ [A-Z]+")
-# str_extract_all(desc,'^(\\S+?)_(\\S+?)_')
-# str_extract(desc, "\\s{2}"
-# str_extract(species_location, "[^_]+_[^_]+")
-```
-
-
-
 ## Playoff Shooting Percentages by Player
 
 
@@ -151,7 +147,7 @@ playoff1 <- wnba_shots2 |>
   summarise(freq = n(),
     total_shots_made = sum(made_shot)) |> 
   mutate(prop = round(total_shots_made / freq, 3)) |> 
-  filter(freq >= 1, prop > 0.5) |> 
+  filter(freq >= 19, prop > 0.5) |> 
   arrange(desc(prop))
   
 
@@ -162,13 +158,15 @@ playoff1 |>
   geom_label(aes(label = prop), size = 2.5, label.size = 0.5) +
   # geom_text(aes(label = shooter_last), size = 3, hjust = 2, check_overlap = TRUE) +
   labs(
-    title = "Alysha Clark and A'ja Wilson Clutch Up in Playoffs",
+    title = "Myisha Hines-Allen and Teaira McCowan Clutch Up in Playoffs",
     x = "Proportion",
     y = "Player",
     caption = "Data Courtesy of Wehoop"
   ) +
-  theme(plot.title = element_text(hjust = -2, face= "bold"))
+  theme(plot.title = element_text(hjust = 1, face= "bold"))
   
+
+summary(playoff1$freq)
 ```
 
 
@@ -181,7 +179,7 @@ playoff2 <- wnba_shots2 |>
   summarise(freq = n(),
     total_shots_made = sum(made_shot)) |> 
   mutate(prop = round(total_shots_made / freq, 3)) |> 
-  filter(freq >= 10, prop < 0.3) |> 
+  filter(freq >= 8, prop < 0.3) |> 
   arrange(desc(prop))
 
 playoff2 |> 
@@ -196,6 +194,114 @@ playoff2 |>
     caption = "Data Courtesy of Wehoop"
   )  +
   theme(plot.title = element_text(hjust = 1, face= "bold"))
+  
+
+summary(playoff2$freq)
+```
+
+
+
+```{r}
+wnba_shots3 <- wnba_shots |> 
+  filter(shooting_team %in% c("Seattle", "Chicago", "Washington", "Atlanta", "Minnesota", "Indiana", "Los Angeles", "Connecticut", "Dallas", "Phoenix", "New York", "Las Vegas")) |> 
+  mutate(made_shot = ifelse(made_shot == "TRUE", 1, 0))
+
+wnba_shots3 <- wnba_shots3 |> 
+  mutate(shooter_first = word(desc, 1),
+         shooter_last = word(desc, 2), 
+         shooter = paste(shooter_first, shooter_last))
+
+wnba_shots3 <- wnba_shots3 |> 
+  mutate(time_group = game_seconds_remaining %/% 24)
+```
+
+
+
+```{r}
+wnba_shots3 |> 
+  filter(game_type == 2) |> 
+  group_by(time_group, shooting_team) |> 
+  summarise(num_shots = n(), 
+            total_shots_made = sum(made_shot)) |> 
+  mutate(prop = round(total_shots_made / num_shots, 3)) |> 
+  ggplot(aes(x = time_group, y = prop, color = shooting_team)) +
+  geom_line(alpha = 0.4) +
+  geom_smooth(alpha = 0.1, se = FALSE) +
+  facet_wrap(vars(shooting_team)) +
+  scale_x_reverse() +
+  labs(
+    title = "Time Series of Goal Percentage in a Game (Regular Season)",
+    x = "Percentage of Game Remaining",
+    y = "Goals Made Percentage",
+    caption = "Data Courtesy of Wehoop"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face= "bold")
+  )
+
+wnba_shots3 |> 
+  filter(game_type == 3) |> 
+  group_by(time_group, shooting_team) |> 
+  summarise(num_shots = n(), 
+            total_shots_made = sum(made_shot)) |> 
+  mutate(prop = round(total_shots_made / num_shots, 3)) |> 
+  ggplot(aes(x = time_group, y = prop, color = shooting_team)) +
+  geom_line(alpha = 0.4) +
+  geom_smooth(alpha = 0.1, se = FALSE) +
+  facet_wrap(vars(shooting_team)) +
+  scale_x_reverse() +
+  labs(
+    title = "Time Series of Goal Percentage in a Game (Playoffs)",
+    x = "Percentage of Game Remaining", 
+    y = "Goals Made Percentage",
+    caption = "Data Courtesy of Wehoop"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face= "bold")
+  )
+
+
+wnba_shots3 |> 
+  filter(game_type == 2) |> 
+  group_by(time_group, shooting_team) |> 
+  summarise(num_shots = n()) |> 
+  ggplot(aes(x = time_group, y = num_shots, color = shooting_team)) +
+  geom_line(alpha = 0.4) +
+  geom_smooth(alpha = 0.1, se = FALSE) +
+  facet_wrap(vars(shooting_team)) +
+  scale_x_reverse() +
+  labs(
+    title = "Time Series of Shots in a Game (Regular Season)",
+    x = "Percentage of Game Remaining", 
+    y = "Number of Shots",
+    caption = "Data Courtesy of Wehoop"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face= "bold")
+  )
+
+wnba_shots3 |> 
+  filter(game_type == 3) |> 
+  group_by(time_group, shooting_team) |> 
+  summarise(num_shots = n()) |> 
+  ggplot(aes(x = time_group, y = num_shots, color = shooting_team)) +
+  geom_line(alpha = 0.4) +
+  geom_smooth(alpha = 0.1, se = FALSE) +
+  facet_wrap(vars(shooting_team)) +
+  scale_x_reverse() +
+  labs(
+    title = "Time Series of Shots in a Game (Playoffs)",
+    x = "Percentage of Game Remaining", 
+    y = "Number of Shots",
+    caption = "Data Courtesy of Wehoop"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face= "bold")
+  )
   
 ```
 
@@ -265,7 +371,9 @@ cluster_playoff2 <- wnba_shots2 |>
   group_by(shooter) |> 
   summarise(freq = n(),
     total_shots_made = sum(made_shot),
-    total_points = sum(shot_value)) |> 
+    prop = total_shots_made / freq,
+    total_points = sum(shot_value),
+    point_perc = total_points / freq) |> 
   mutate(prop = round(total_shots_made / freq, 3))
   
 # normalizing the data
@@ -277,11 +385,11 @@ cluster_playoff2 <- cluster_playoff2 |>
 
 std_kmeans2 <- cluster_playoff2 |> 
   select(std_points, std_freq) |> 
-  kmeans(algorithm = "Lloyd", centers = 4, nstart = 30)
+  kmeans(algorithm = "Lloyd", centers = 3, nstart = 30)
 
 cluster_playoff2 |>
   mutate(
-    player_clusters = as.factor(std_kmeans$cluster)
+    player_clusters = as.factor(std_kmeans2$cluster)
   ) |>
   ggplot(aes(x = std_points, y = std_freq,
              color = player_clusters)) +
@@ -292,6 +400,47 @@ cluster_playoff2 |>
   labs(
     x = "Total Points",
     y = "Shots Attempted",
+    color = "Player Clusters",
+    title = "Player Impact in Playoffs",
+    caption = "Data Courtesy of Wehoop"
+  ) +
+   theme(
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5, face= "bold")
+  )
+
+
+
+
+
+
+
+
+
+  
+cluster_playoff2 <- cluster_playoff2 |> 
+  mutate(
+    std_point_perc = as.numeric(scale(point_perc, center = TRUE, scale = TRUE)),
+    std_prop = as.numeric(scale(prop, center = TRUE, scale = TRUE))
+  )
+
+std_kmeans2 <- cluster_playoff2 |> 
+  select(std_point_perc, std_prop) |> 
+  kmeans(algorithm = "Lloyd", centers = 4, nstart = 30)
+
+cluster_playoff2 |>
+  mutate(
+    player_clusters = as.factor(std_kmeans2$cluster)
+  ) |>
+  ggplot(aes(y = std_point_perc, x = std_prop,
+             color = player_clusters)) +
+  geom_point(size = 2, alpha = 0.5) + 
+  ggthemes::scale_color_colorblind() +
+  theme(legend.position = "bottom") +
+  coord_fixed() +
+  labs(
+    x = "Shooting Precentage",
+    y = "Points Percentage",
     color = "Player Clusters",
     title = "Player Impact in Playoffs",
     caption = "Data Courtesy of Wehoop"
