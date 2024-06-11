@@ -40,9 +40,14 @@ wnba_shots |>
 
 
 
-
-
-
+## look at play by play
+pbp_2023 <- wehoop::load_wnba_pbp() |> 
+  filter(shooting_play) |> 
+  # make a column to indicate the shooting team
+  mutate(shooting_team = ifelse(team_id == home_team_id, 
+                                home_team_name,
+                                away_team_name)) |> 
+  slice_head(n = 20)
 
 # install.packages("sportyR")
 
