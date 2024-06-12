@@ -7,49 +7,7 @@ library(tidyverse)
 library(wehoop)
 wnba_shots <- read_csv("https://raw.githubusercontent.com/36-SURE/36-SURE.github.io/main/data/wnba_shots.csv")
 
-## Structure
-(wnba_shots)
 
-## shot_type variable
-wnba_shots |> 
-  select(shot_type) |> 
-  unique()
-
-## top 10 shots
-wnba_shots |> 
-  count(shot_type, name = "freq") |> 
-  arrange(desc(freq)) |> 
-  slice_head(n = 10) |> 
-  mutate(prop = freq / sum(freq),
-         shot_type = fct_reorder(shot_type, prop)) |> 
-  ggplot(aes(shot_type, prop)) + 
-  geom_col(aes(fill = shot_type)) +
-  labs(
-    x = "Shot Type",
-    y = "Percentage of Total Shots",
-    title = "Top 10 Shot Types in the WNBA",
-    caption = "Data Courtesy of wehoops",
-    fill = "Shot Type"
-  ) +
-  scale_y_continuous(labels = scales::percent) +
-  theme_bw(base_size = 15) +
-  theme(plot.title = element_text(hjust = 0.5, 
-                                  face = "bold")) +
-  scale_fill_brewer(palette = "Paired") +
-  coord_flip()
-
-
-
-## look at play by play
-pbp_2023 <- wehoop::load_wnba_pbp() |> 
-  filter(shooting_play) |> 
-  # make a column to indicate the shooting team
-  mutate(shooting_team = ifelse(team_id == home_team_id, 
-                                home_team_name,
-                                away_team_name)) |> 
-  slice_head(n = 20)
-
-# install.packages("sportyR")
 
 ## load in the library
 library(sportyR)
@@ -61,35 +19,15 @@ sportyR::geom_basketball("WNBA")
 wnba_shots <- wnba_shots |> 
   slice(-grep("^Team", shooting_team))
 
-## Create A'Ja Wilson Shot Chart
+## Test Data (Wilson, Ionescu, LVA)
+### Wilson
 wilson <- wnba_shots |> 
   filter(game_type == 2 & shooting_team == "Las Vegas" & abs(coordinate_x) >= 10 & str_like(desc, "A'ja Wilson%")) |> 
   mutate(coordinate_x = abs(coordinate_x),
          player = str_extract(desc, "A'ja Wilson")) |> 
   slice(-grep("^Free Throw", shot_type))
 
-sportyR::geom_basketball("WNBA", xlim = c(0, 47)) +
-  geom_point(wilson, mapping = aes(coordinate_x, coordinate_y, color = made_shot), alpha = 0.8, size = 3) +
-  scale_color_manual(values = c("firebrick", "green3"))
-
-sportyR::geom_basketball("WNBA", xlim = c(0, 47)) +
-  geom_density_2d_filled(wilson, mapping = aes(coordinate_x, coordinate_y, fill = made_shot), 
-                         contour_var = "ndensity", breaks = seq(0.1, 1.0, length.out = 10), alpha = .5) +
-  geom_point(wilson, mapping = aes(coordinate_x, coordinate_y, color = made_shot), alpha = 0.8, size = 3)
-
-
-sportyR::geom_basketball("WNBA", xlim = c(0, 47)) +
-  stat_density_2d(wilson, mapping = aes(coordinate_x, coordinate_y, fill = made_shot), 
-                  geom = "polygon", contour = TRUE, bins = 50, alpha = .5) +
-  geom_point(wilson, mapping = aes(coordinate_x, coordinate_y, color = made_shot), alpha = 0.8, size = 3)
-
-
-
-
-
-
-
-
+### Ionescu
 ionescu_point <- wnba_shots |> 
   filter(game_type == 2 & shooting_team == "New York" 
          & str_like(desc, "Sabrina Ionescu%") & abs(coordinate_x) >= 10) |> 
@@ -97,164 +35,111 @@ ionescu_point <- wnba_shots |>
          player = str_extract(desc, "Sabrina Ionescu")) |> 
   slice(-grep("^Free Throw", shot_type))
 
+### Las Vegas Aces
 LVA <- wnba_shots |> 
   filter(game_type == 2 & shooting_team == "Las Vegas" & abs(coordinate_x) >= 10) |> 
   mutate(coordinate_x_abs = abs(coordinate_x)) |> 
   slice(-grep("^Free Throw", shot_type))
 
-
-wnba_court +
-  geom_point(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y), size = 2)
-
-## Create contours of 2D kernel density estimate
-ionescu_point |> 
-  ggplot(aes(y = coordinate_x_abs, x = coordinate_y)) +
-  geom_point(size = 2, alpha = 0.4) +
-  geom_density2d() +
-  coord_fixed() +
-  scale_y_reverse()
-
-wnba_court +
-  geom_point(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y), size = 2, alpha = 0.4) +
-  # adjust - modifies the multivariate bandwidth
-  geom_density2d(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y), adjust = 0.5)
-
-
-## Heatmap
-ionescu_point |> 
-  ggplot(aes(y = coordinate_x_abs, x = coordinate_y)) +
-  stat_density2d(aes(fill = after_stat(level)),
-                 h = 0.6, bins = 60, geom = "polygon") +
-  scale_fill_gradient(low = "midnightblue", 
-                      high = "gold") +
-  scale_y_reverse()
-
-
-## Turn off contours and use tiles insyead
-### Divide the space into a grid and color the grid according to high/low values
-ionescu_point |> 
-  ggplot(aes(y = coordinate_x_abs, x = coordinate_y)) +
-  stat_density2d(aes(fill = after_stat(density)),
-                 h = 0.6, bins = 60, contour = FALSE,
-                 geom = "raster") +
-  scale_fill_gradient(low = "midnightblue", 
-                      high = "gold") +
-  theme(legend.position = "bottom") +
-  coord_fixed() +
-  scale_y_reverse()
-
-
-## Hexagonal binning
-#install.packages('hexbin')
-library(hexbin)
-LVA |> 
-  ggplot(aes(y = coordinate_x_abs, x = coordinate_y)) +
-  geom_hex(binwidth = c(1, 1)) +
-  scale_fill_gradient(low = "midnightblue", 
-                      high = "gold") +
-  theme(legend.position = "bottom") +
-  coord_fixed() +
-  scale_y_reverse()
-
-wnba_court +
-  #geom_point(data = LVA, aes(y = coordinate_x_abs, x = coordinate_y), size = 2, alpha = 0.4) +
-  # adjust - modifies the multivariate bandwidth
-  geom_hex(data = LVA, aes(y = coordinate_x_abs, x = coordinate_y), binwidth = c(1, 1)) +
-  scale_fill_gradient(low = "midnightblue", 
-                      high = "green2")
-
-## Shooting efficiency
-### Can compute a function of another variable inside hexagons with stat_summary_hex()
-ionescu_point |> 
-  ggplot(aes(y = coordinate_x_abs, x = coordinate_y, 
-             z = made_shot, group = -1)) +
-  stat_summary_hex(binwidth = c(2, 2), fun = mean,
-                   color = "black") +
-  scale_fill_gradient(low = "midnightblue", 
-                      high = "green2") +
-  theme(legend.position = "bottom") +
-  coord_fixed() +
-  scale_y_reverse()
-
-wnba_court +
-  stat_summary_hex(data = LVA, aes(y = coordinate_x_abs, x = coordinate_y, 
-                                   z = made_shot, group = -1), 
-                   binwidth = c(2, 2), fun = mean,
-                   color = "black") +
-  scale_fill_gradient(low = "midnightblue", 
-                      high = "green2") +
-  theme(legend.position = "bottom")
-
-
-IND <- wnba_shots |> 
-  filter(game_type == 2 & shooting_team == "Indiana" & abs(coordinate_x) >= 10) |> 
-  mutate(coordinate_x_abs = abs(coordinate_x)) |> 
-  slice(-grep("^Free Throw", shot_type))
-
+### New York Liberty 
 NYL <- wnba_shots |> 
   filter(game_type == 2 & shooting_team == "New York" & abs(coordinate_x) >= 10) |> 
   mutate(coordinate_x_abs = abs(coordinate_x)) |> 
   slice(-grep("^Free Throw", shot_type))
 
-wnba_court +
-  stat_summary_hex(data = NYL, aes(y = coordinate_x_abs, x = coordinate_y, 
-                                   z = made_shot, group = -1), 
-                   binwidth = c(3, 3), fun = mean,
-                   color = "black", alpha = 0.6) +
-  scale_fill_gradient(low = "midnightblue", 
-                      high = "green2") +
-  theme(legend.position = "bottom")
-
-
-
-
-wnba_court +
-  stat_summary_hex(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y, 
-                                             z = made_shot, group = -1), 
-                   binwidth = c(3, 3), fun = mean,
-                   color = "black", alpha = 0.6) +
-  scale_fill_gradient(low = "midnightblue", 
-                      high = "green2") +
-  theme(legend.position = "bottom")
-
-wnba_court +
-  #geom_point(data = LVA, aes(y = coordinate_x_abs, x = coordinate_y), size = 2, alpha = 0.4) +
-  # adjust - modifies the multivariate bandwidth
-  geom_hex(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y), 
-           binwidth = c(3, 3), alpha = 0.75) +
-  scale_fill_gradient(low = "#1a00ff", 
-                      high = "#ff8c00")
-
-
-wilson_point <- wnba_shots |> 
-  filter(game_type == 2 & shooting_team == "Las Vegas" 
-         & str_like(desc, "A'ja Wilson%") & abs(coordinate_x) >= 10) |> 
-  mutate(coordinate_x_abs = abs(coordinate_x),
-         player = str_extract(desc, "A'ja Wilson")) |> 
+### Indiana Pacers
+IND <- wnba_shots |> 
+  filter(game_type == 2 & shooting_team == "Indiana" & abs(coordinate_x) >= 10) |> 
+  mutate(coordinate_x_abs = abs(coordinate_x)) |> 
   slice(-grep("^Free Throw", shot_type))
 
+## Make WNBA Court
+### Base
+wnba_court <- sportyR::geom_basketball("WNBA", display = "offense", rotation = 90)
 
-wnba_court +
-  stat_summary_hex(data = wilson_point, aes(y = coordinate_x_abs, x = coordinate_y, 
-                                            z = made_shot, group = -1), 
-                   binwidth = c(3, 3), fun = mean,
-                   color = "black", alpha = 0.6) +
-  scale_fill_gradient(low = "#1a00ff", 
-                      high = "#ff8c00") +
-  theme(legend.position = "bottom")
+### New York Liberty court
+#### colors = outline and inside arc lines - #6ECEB2, inside arc - #857e82, 
+# #b5b7b6, main court - gray, arc - white, paint = #2a2729
+# cani_color_league_features(league_code = "WNBA")
+nyl_court <- sportyR::geom_basketball("WNBA", display = "offense", rotation = 90,
+                         color_updates = list(
+                           panel_background = "black",
+                           offensive_half_court = "gray",
+                           court_apron = "#6ECEB2",
+                           center_circle_outline = "white",
+                           center_circle_fill = "#6ECEB2",
+                           endline = "white",
+                           sideline = "white",
+                           division_line = "white",
+                           two_point_range = "#857e82",
+                           painted_area = "#2a2729",
+                           lane_boundary = "white",
+                           free_throw_circle_fill = "#857e82",
+                           inbounding_line = "white",
+                           substitution_line = "white",
+                           three_point_line = "white",
+                           lane_space_mark = "white",
+                           free_throw_circle_outline = "#6ECEB2",
+                           free_throw_circle_dash = "#6ECEB2",
+                           baseline_lower_defensive_box = "white",
+                           lane_lower_defensive_box = "#6ECEB2",
+                           restricted_arc = "#6ECEB2"
+                         ))
 
-wnba_court +
-  #geom_point(data = LVA, aes(y = coordinate_x_abs, x = coordinate_y), size = 2, alpha = 0.4) +
-  # adjust - modifies the multivariate bandwidth
-  geom_hex(data = wilson_point, aes(y = coordinate_x_abs, x = coordinate_y), 
-           binwidth = c(3, 3), alpha = 0.6) +
-  scale_fill_gradient(low = "#1a00ff", 
-                      high = "#ff8c00") +
-  theme(legend.position = "bottom")
+### Final product
+
+nyl_court +
+  stat_summary_hex(data = NYL, aes(y = coordinate_x_abs, x = coordinate_y, 
+                                   z = made_shot, group = -1), 
+                   binwidth = c(2, 2), fun = mean,
+                   color = "black", alpha = .8) +
+  scale_fill_gradient(low = "white", 
+                      high = "darkorange3") +
+  labs(
+    fill = "Shooting Rate",
+    title = "New York Libery Shooting Efficiency"
+  ) +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 20))
+
+nyl_court +
+  geom_hex(data = NYL, aes(y = coordinate_x_abs, x = coordinate_y), 
+           binwidth = c(2, 2), alpha = 0.8, color = "black") +
+  scale_fill_gradient(low = "white", 
+                      high = "darkorange3") +
+  labs(
+    fill = "# of Shots",
+    title = "New York Libery Shooting Frequency"
+  ) +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 20))
 
 
+nyl_court +
+  stat_summary_hex(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y, 
+                                   z = made_shot, group = -1), 
+                   binwidth = c(2, 2), fun = mean,
+                   color = "black", alpha = .8) +
+  scale_fill_gradient(low = "white", 
+                      high = "darkorange3") +
+  labs(
+    fill = "Shooting Rate",
+    title = "Sabrina Ionescu Shooting Efficiency"
+  ) +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 20))
 
-
+nyl_court +
+  geom_hex(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y), 
+           binwidth = c(2, 2), color = "black", alpha = 0.8) +
+  scale_fill_gradient(low = "white", 
+                      high = "darkorange3") +
+  labs(
+    fill = "# of Shots",
+    title = "Sabrina Ionescu Shooting Frequency"
+  ) +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 20))
 
 
 
@@ -824,3 +709,251 @@ sportyR::geom_basketball("WNBA") +
   scale_color_manual(values = c("firebrick", "green3"))
 
 summary(wnba_shots)
+
+
+
+
+
+
+## Structure
+(wnba_shots)
+
+## shot_type variable
+wnba_shots |> 
+  select(shot_type) |> 
+  unique()
+
+## top 10 shots
+wnba_shots |> 
+  count(shot_type, name = "freq") |> 
+  arrange(desc(freq)) |> 
+  slice_head(n = 10) |> 
+  mutate(prop = freq / sum(freq),
+         shot_type = fct_reorder(shot_type, prop)) |> 
+  ggplot(aes(shot_type, prop)) + 
+  geom_col(aes(fill = shot_type)) +
+  labs(
+    x = "Shot Type",
+    y = "Percentage of Total Shots",
+    title = "Top 10 Shot Types in the WNBA",
+    caption = "Data Courtesy of wehoops",
+    fill = "Shot Type"
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  theme_bw(base_size = 15) +
+  theme(plot.title = element_text(hjust = 0.5, 
+                                  face = "bold")) +
+  scale_fill_brewer(palette = "Paired") +
+  coord_flip()
+
+
+
+## look at play by play
+pbp_2023 <- wehoop::load_wnba_pbp() |> 
+  filter(shooting_play) |> 
+  # make a column to indicate the shooting team
+  mutate(shooting_team = ifelse(team_id == home_team_id, 
+                                home_team_name,
+                                away_team_name)) |> 
+  slice_head(n = 20)
+
+# install.packages("sportyR")
+
+
+
+sportyR::geom_basketball("WNBA", xlim = c(0, 47)) +
+  geom_point(wilson, mapping = aes(coordinate_x, coordinate_y, color = made_shot), alpha = 0.8, size = 3) +
+  scale_color_manual(values = c("firebrick", "green3"))
+
+sportyR::geom_basketball("WNBA", xlim = c(0, 47)) +
+  geom_density_2d_filled(wilson, mapping = aes(coordinate_x, coordinate_y, fill = made_shot), 
+                         contour_var = "ndensity", breaks = seq(0.1, 1.0, length.out = 10), alpha = .5) +
+  geom_point(wilson, mapping = aes(coordinate_x, coordinate_y, color = made_shot), alpha = 0.8, size = 3)
+
+
+sportyR::geom_basketball("WNBA", xlim = c(0, 47)) +
+  stat_density_2d(wilson, mapping = aes(coordinate_x, coordinate_y, fill = after_stat(level)), 
+                  geom = "polygon", contour = TRUE, bins = 50, alpha = .5) +
+  geom_point(wilson, mapping = aes(coordinate_x, coordinate_y, color = made_shot), alpha = 0.8, size = 3)
+
+
+## Test court display
+nyl_court +
+  geom_point(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y), size = 2)
+
+## Create contours of 2D kernel density estimate
+### w/o court
+ionescu_point |> 
+  ggplot(aes(y = coordinate_x_abs, x = coordinate_y)) +
+  geom_point(size = 2, alpha = 0.4) +
+  geom_density2d() +
+  coord_fixed() +
+  scale_y_reverse()
+
+### w/ court
+nyl_court +
+  geom_point(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y), size = 2, alpha = 0.4) +
+  # adjust - modifies the multivariate bandwidth
+  geom_density2d(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y), adjust = 0.5)
+
+
+## Heatmap
+ionescu_point |> 
+  ggplot(aes(y = coordinate_x_abs, x = coordinate_y)) +
+  stat_density2d(aes(fill = after_stat(level)),
+                 h = 0.6, bins = 60, geom = "polygon") +
+  scale_fill_gradient(low = "midnightblue", 
+                      high = "gold") +
+  scale_y_reverse()
+
+
+## Turn off contours and use tiles instead
+### Divide the space into a grid and color the grid according to high/low values
+ionescu_point |> 
+  ggplot(aes(y = coordinate_x_abs, x = coordinate_y)) +
+  stat_density2d(aes(fill = after_stat(density)),
+                 h = 0.6, bins = 60, contour = FALSE,
+                 geom = "raster") +
+  scale_fill_gradient(low = "white", 
+                      high = "royalblue4") +
+  theme(legend.position = "bottom") +
+  coord_fixed() +
+  scale_y_reverse()
+
+
+## Hexagonal binning
+#install.packages('hexbin')
+library(hexbin)
+### LVA
+LVA |> 
+  ggplot(aes(y = coordinate_x_abs, x = coordinate_y)) +
+  geom_hex(binwidth = c(1, 1)) +
+  scale_fill_gradient(low = "midnightblue", 
+                      high = "gold") +
+  theme(legend.position = "bottom") +
+  coord_fixed() +
+  scale_y_reverse()
+
+
+### LVA w/ court
+wnba_court +
+  #geom_point(data = LVA, aes(y = coordinate_x_abs, x = coordinate_y), size = 2, alpha = 0.4) +
+  # adjust - modifies the multivariate bandwidth
+  geom_hex(data = LVA, aes(y = coordinate_x_abs, x = coordinate_y), binwidth = c(1, 1)) +
+  scale_fill_gradient(low = "midnightblue", 
+                      high = "green2")
+
+
+### NYL w/ court
+nyl_court +
+  #geom_point(data = LVA, aes(y = coordinate_x_abs, x = coordinate_y), size = 2, alpha = 0.4) +
+  # adjust - modifies the multivariate bandwidth
+  geom_hex(data = NYL, aes(y = coordinate_x_abs, x = coordinate_y),
+           binwidth = c(3, 3), color = "black") +
+  scale_fill_gradient(low = "white", 
+                      high = "darkred")
+
+## Shooting efficiency
+### Can compute a function of another variable inside hexagons with stat_summary_hex()
+ionescu_point |> 
+  ggplot(aes(y = coordinate_x_abs, x = coordinate_y, 
+             z = made_shot, group = -1)) +
+  stat_summary_hex(binwidth = c(2, 2), fun = mean,
+                   color = "black") +
+  scale_fill_gradient(low = "midnightblue", 
+                      high = "green2") +
+  theme(legend.position = "bottom") +
+  coord_fixed() +
+  scale_y_reverse()
+
+nyl_court +
+  stat_summary_hex(data = LVA, aes(y = coordinate_x_abs, x = coordinate_y, 
+                                   z = made_shot, group = -1), 
+                   binwidth = c(3, 3), fun = mean,
+                   color = "black") +
+  scale_fill_gradient(low = "midnightblue", 
+                      high = "gold") +
+  theme(legend.position = "bottom")
+
+
+
+wnba_court +
+  stat_summary_hex(data = NYL, aes(y = coordinate_x_abs, x = coordinate_y, 
+                                   z = made_shot, group = -1), 
+                   binwidth = c(3, 3), fun = mean,
+                   color = "black", alpha = 0.6) +
+  scale_fill_gradient(low = "midnightblue", 
+                      high = "green2") +
+  theme(legend.position = "bottom")
+
+
+
+
+wnba_court +
+  stat_summary_hex(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y, 
+                                             z = made_shot, group = -1), 
+                   binwidth = c(3, 3), fun = mean,
+                   color = "black", alpha = 0.6) +
+  scale_fill_gradient(low = "midnightblue", 
+                      high = "green2") +
+  theme(legend.position = "bottom")
+
+nyl_court +
+  stat_summary_hex(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y, 
+                                             z = made_shot, group = -1), 
+                   binwidth = c(3, 3), fun = mean,
+                   color = "black", alpha = 0.6) +
+  scale_fill_gradient(low = "white", 
+                      high = "firebrick") +
+  labs(
+    fill = "Shooting %",
+    title = "Sabrina Ionescu Shooting %"
+  ) +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, face = "bold"))
+
+nyl_court +
+  stat_summary_hex(data = NYL, aes(y = coordinate_x_abs, x = coordinate_y, 
+                                   z = made_shot, group = -1), 
+                   binwidth = c(3, 3), fun = mean,
+                   color = "black", alpha = 0.6) +
+  scale_fill_gradient(low = "white", 
+                      high = "firebrick") +
+  labs(
+    fill = "Shooting %",
+    title = "New York Libery Shooting %"
+  ) +
+  theme(legend.position = "bottom")
+
+wnba_court +
+  #geom_point(data = LVA, aes(y = coordinate_x_abs, x = coordinate_y), size = 2, alpha = 0.4) +
+  # adjust - modifies the multivariate bandwidth
+  geom_hex(data = ionescu_point, aes(y = coordinate_x_abs, x = coordinate_y), 
+           binwidth = c(3, 3), alpha = 0.75) +
+  scale_fill_gradient(low = "#1a00ff", 
+                      high = "#ff8c00")
+
+
+wilson_point <- wnba_shots |> 
+  filter(game_type == 2 & shooting_team == "Las Vegas" 
+         & str_like(desc, "A'ja Wilson%") & abs(coordinate_x) >= 10) |> 
+  mutate(coordinate_x_abs = abs(coordinate_x),
+         player = str_extract(desc, "A'ja Wilson")) |> 
+  slice(-grep("^Free Throw", shot_type))
+
+
+wnba_court +
+  stat_summary_hex(data = wilson_point, aes(y = coordinate_x_abs, x = coordinate_y, 
+                                            z = made_shot, group = -1), 
+                   binwidth = c(3, 3), fun = mean,
+                   color = "black", alpha = 0.6) +
+  scale_fill_gradient(low = "#1a00ff", 
+                      high = "#ff8c00") +
+  theme(legend.position = "bottom")
+
+wnba_court +
+  geom_hex(data = wilson_point, aes(y = coordinate_x_abs, x = coordinate_y), 
+           binwidth = c(3, 3), alpha = 0.6) +
+  scale_fill_gradient(low = "#1a00ff", 
+                      high = "#ff8c00") +
+  theme(legend.position = "bottom")
