@@ -11,6 +11,7 @@ library(ggthemes)
 library(wehoop)
 library(sportyR)
 library(paletteer)
+library(shiny)
 ```
 
 
@@ -218,6 +219,7 @@ wnba_shots3 <- wnba_shots3 |>
 
 
 ```{r}
+## Graph 1
 wnba_shots3 |> 
   filter(game_type == 2) |> 
   group_by(time_group, shooting_team) |> 
@@ -240,6 +242,7 @@ wnba_shots3 |>
     plot.title = element_text(hjust = 0.5, face= "bold")
   )
 
+## Graph 2
 wnba_shots3 |> 
   filter(game_type == 3) |> 
   group_by(time_group, shooting_team) |> 
@@ -262,7 +265,7 @@ wnba_shots3 |>
     plot.title = element_text(hjust = 0.5, face= "bold")
   )
 
-
+# Graph 3
 wnba_shots3 |> 
   filter(game_type == 2) |> 
   group_by(time_group, shooting_team) |> 
@@ -283,6 +286,7 @@ wnba_shots3 |>
     plot.title = element_text(hjust = 0.5, face= "bold")
   )
 
+# Graph 4
 wnba_shots3 |> 
   filter(game_type == 3) |> 
   group_by(time_group, shooting_team) |> 
@@ -376,6 +380,8 @@ cluster_playoff2 <- wnba_shots2 |>
     point_perc = total_points / freq) |> 
   mutate(prop = round(total_shots_made / freq, 3))
   
+
+## Cluster 1
 # normalizing the data
 cluster_playoff2 <- cluster_playoff2 |> 
   mutate(
@@ -416,7 +422,7 @@ cluster_playoff2 |>
 
 
 
-
+## Cluster 2
   
 cluster_playoff2 <- cluster_playoff2 |> 
   mutate(
@@ -450,18 +456,6 @@ cluster_playoff2 |>
     plot.title = element_text(hjust = 0.5, face= "bold")
   )
 ```
-
-
-
-
-```{r}
-# Geom hex for a potential heat map
-wnba_shots2 |> 
-  ggplot(aes(x = coordinate_x, y = coordinate_y)) +
-  geom_hex(bins = 40) + 
-  paletteer::scale_fill_paletteer_c("viridis::plasma")
-```
-
 
 
 
