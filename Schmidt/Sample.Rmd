@@ -84,8 +84,9 @@ close_games_observing <- left_join(close_games, final_score) |>
  if_else(score_differential > 0 & final_score_differential > 0, "Kept Lead - Increased",
  if_else(score_differential > 0 & final_score_differential <= 0, "Lost Lead", 
  if_else(score_differential < 0 & final_score_differential < 0 & score_differential == final_score_differential, "No Comeback",
- if_else(score_differential < 0 & final_score_differential < 0 & score_differential > final_score_differential, "Comeback - Not Enough",
- if_else(score_differential > 0 & final_score_differential <= 0, "Lost Lead","Took Lead"))))))))
+ if_else(score_differential < 0 & final_score_differential < 0 & score_differential < final_score_differential, "Comeback - Not Enough",
+ if_else(score_differential < 0 & final_score_differential < 0 & final_score_differential < score_differential, "No Comeback - Deficity Increased",
+ if_else(score_differential > 0 & final_score_differential <= 0, "Lost Lead","Took Lead")))))))))
 
 close_games_observing
 
