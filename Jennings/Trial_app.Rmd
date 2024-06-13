@@ -1,0 +1,351 @@
+---
+title: "WNBA Shooting"
+author: "Liam Jennings"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    theme: 
+      version: 4
+      bootswatch: sandstone
+runtime: shiny
+---
+
+
+About
+==========================
+
+
+### **Additional Information:** 
+
+**Authors:**
+
+Liam Jennings
+
+
+**Objective:**
+
+Although we outlined a few questions, our shiny app gives viewers the flexibility to look at many different questions regarding Spotify artists and their audio features. We hope that viewers may be able to learn more about their favorite genre and be able to find similarities and differences between their favorite and least favorite genres.
+
+
+**Tribulations and Victories of Data Acquisition and Wrangling:**
+
+After acquiring a Spotify ID and access token, we were able to view all Spotify data on an artist or song by using either it's name or it's unique ID. Originally, we had wanted to analyze at least five artists per genre in order to build a larger dataset and have more accurate analysis. However, our for loop was inconsistent with the large amount of data and had a difficult time finding the correct artists based of off their ID. Each time we ran the for loop, we would receive a dataset with a different number of artists. Due to this, we ended up reducing our sample size and looking at between three and five artists per genre. This was a significantly smaller number and allowed the for loop to work accurately, which enabled us to produce our final dataset. 
+
+
+**Color Scheme:**
+
+Since our data was pulled from Spotify, we wanted our graphs to all have a color scheme related to Spotify. Unfortunately, for the graph on the Audio Features Part 2 page, too many colors were required for points that overlapped, making it impossible to find a solution where the colors were all different. As a result, we stuck with the scale_color_calc() color scale. On all the other graphs, we used shades of green, grey, and black (the Spotify colors) to represent the data. On the Audio Features Part 1 page we were able to use the same shade of green that is in the official Spotify logo. 
+
+
+### **Defining The Variables**
+
+- **Danceability:** How suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, and beat strength.  
+
+- **Energy:** A measure of intensity and activity that ranges from 0.0 to 1.0.
+
+- **Loudness:** The overall loudness of a track in decibels (dB).
+
+- **Speechiness:** Detects the presence of spoken words in a track. The values range from 0.0 to 1.0.
+
+- **Acousticness:** A measure of how acoustic a track is. Ranges from 0.0 to 1.0.
+
+- **Instrumentalness:** Measures the amount of vocal content in a track. Ranges from 0.0 to 1.0 with 1.0 being more instrumental.
+
+- **Liveness:** Detects the presence of an audience in the track, such as if the track was performed live or not. Ranges from 0.0 to 1.0.
+
+- **Valence:** Describes the musical positiveness of a track. The more positive a track is, the closer the value is to 1.0.
+
+- **Tempo:** The overall estimated tempo of a track in beats per minute (BPM).
+
+- **Key:** Represents the musical key of a track (A, A#, B, C, C#, D, D#, E, F, F#, G, and G#).
+
+- **Mode:** Indicates whether a track is in a major or minor key.
+
+
+```{r global, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(flexdashboard)
+library(shiny)
+library(sportyR)
+```
+
+```{r, echo = FALSE}
+### Data
+#### Read in the data
+wnba_shots <- read_csv("https://raw.githubusercontent.com/36-SURE/36-SURE.github.io/main/data/wnba_shots.csv")
+
+#### Clean dataset
+wnba_shots <- wnba_shots |> 
+  # filter by regular season and remove outliers
+  filter(game_type == 2 & abs(coordinate_x) >= 10) |> 
+  mutate(
+    # take the absolute value of the x coordinate to only get one side of the court
+    coordinate_x = abs(coordinate_x),
+    # rename shooting_team to include team name
+    shooting_team_name = case_match(shooting_team, "Atlanta" ~ "Atlanta Dream", 
+                              "Chicago" ~ "Chicago Sky", "Connecticut" ~ "Connecticut Sun", 
+                              "Dallas" ~ "Dallas Wings", "Indiana" ~ "Indiana Fever", 
+                              "Las Vegas" ~ "Las Vegas Aces", "Los Angeles" ~ "Los Angeles Spark", 
+                              "Minnesota" ~ "Minnesota Lynx", "New York" ~ "New York Liberty", 
+                              "Phoenix" ~ "Phoenix Mercury", "Seattle" ~ "Seattle Storm", 
+                              "Washington" ~ "Washington Mystics")
+         ) |>
+  # remove Free Throws and the All-Star game shots
+  slice(-c(grep("^Free Throw", shot_type), grep("^Team", shooting_team)))
+
+# WNBA court (New York Libery)
+nyl_court <- sportyR::geom_basketball("WNBA", display = "offense", rotation = 90,
+                                      color_updates = list(
+                                        panel_background = "black",
+                                        offensive_half_court = "gray",
+                                        court_apron = "#6ECEB2",
+                                        center_circle_outline = "white",
+                                        center_circle_fill = "#6ECEB2",
+                                        endline = "white",
+                                        sideline = "white",
+                                        division_line = "white",
+                                        two_point_range = "#857e82",
+                                        painted_area = "#2a2729",
+                                        lane_boundary = "white",
+                                        free_throw_circle_fill = "#857e82",
+                                        inbounding_line = "white",
+                                        substitution_line = "white",
+                                        three_point_line = "white",
+                                        lane_space_mark = "white",
+                                        free_throw_circle_outline = "#6ECEB2",
+                                        free_throw_circle_dash = "#6ECEB2",
+                                        baseline_lower_defensive_box = "white",
+                                        lane_lower_defensive_box = "#6ECEB2",
+                                        restricted_arc = "#6ECEB2"
+                                      ))
+```
+
+WNBA Team Shooting
+==========================
+
+Row 
+-------------------------
+
+```{r, echo=FALSE}
+inputPanel(
+ selectInput("teams",
+                        "Select a Team",
+                        choices = c("Atlanta Dream", "Chicago Sky",
+                                    "Connecticut Sun", "Dallas Wings", 
+                                    "Indiana Fever", "Las Vegas Aces",
+                                    "Los Angeles Spark", "Minnesota Lynx",
+                                    "New York Liberty", "Phoenix Mercury",
+                                    "Seattle Storm", "Washington Mystics"))
+)
+
+```
+
+Row 
+-------------------------
+
+```{r, echo = FALSE}
+renderPlot({
+  # create data
+  team_data <- wnba_shots |>
+    filter(shooting_team_name == input$teams)
+  
+  # plot
+  nyl_court +
+    stat_summary_hex(
+      data = team_data,
+      aes(
+        x = coordinate_y,
+        y = coordinate_x,
+        z = made_shot,
+        group = -1
+      ),
+      binwidth = c(2, 2),
+      fun = mean,
+      color = "black",
+      alpha = .8
+    ) +
+    scale_fill_gradient(low = "white", high = "darkorange3") +
+    labs(fill = "Shooting Rate",
+         title = paste(input$teams, "Shooting Efficiency")) +
+    theme(
+      legend.position = "bottom",
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 20)
+    )
+})
+```
+
+```{r, echo=FALSE}
+renderPlot({
+  # create data
+  team_data <- wnba_shots |>
+    filter(shooting_team_name == input$teams)
+  
+  # plot
+  nyl_court +
+    geom_hex(
+      data = team_data,
+      aes(x = coordinate_y, y = coordinate_x),
+      binwidth = c(2, 2),
+      alpha = 0.8,
+      color = "black"
+    ) +
+    scale_fill_gradient(low = "white", high = "darkorange3") +
+    labs(fill = "# of Shots",
+         title = paste(input$teams, "Shooting Frequency")) +
+    theme(
+      legend.position = "bottom",
+      plot.title = element_text(
+        hjust = 0.5,
+        face = "bold",
+        size = 20
+      )
+    )
+})
+```
+
+
+Row
+-------------------------
+
+### **Question & Plots Explanation:**
+
+**Question 1:** The first question we chose to look at is how the various audio features differ by genre. 
+
+
+
+**Plots Explanation:** The left plot analyzes these features over time and the right plot measures the frequency of each feature by genre. The viewer has the ability to compare different genres and observe how the audio features have changed over time or compare the frequency of various audio features.
+
+
+### **Observations / Conclusions:**
+
+- For the majority of genres, danceability, loudness, and liveness have increased over time.
+
+- For the majority of genres, energy, speechiness, acousticness, instrumentalness, valence, and tempo have decreased or stayed constant over time.
+
+- Genres with high Danceability also tend to have high Energy and Loudness.
+
+- All genres have low Speechiness, Acousticness, Instrumentalness, and Liveness.
+
+- R&B, Hip-Hop, and Latin all have similar audio features.
+
+- Country, Rock, and Indie have similar features.
+
+- Pop and EDM have similar features.
+
+Player Shooting
+==========================
+
+Row 
+-------------------------
+
+```{r, echo=FALSE}
+inputPanel(
+ selectInput("teams",
+                        "Select a Team",
+                        choices = c("Atlanta Dream", "Chicago Sky",
+                                    "Connecticut Sun", "Dallas Wings", 
+                                    "Indiana Fever", "Las Vegas Aces",
+                                    "Los Angeles Spark", "Minnesota Lynx",
+                                    "New York Liberty", "Phoenix Mercury",
+                                    "Seattle Storm", "Washington Mystics")),
+  selectInput("players",
+                        "Select a Player",
+                        choices = input$teams)
+)
+
+
+```
+
+Row 
+-------------------------
+
+```{r, echo = FALSE}
+renderPlot({
+  # create data
+  team_data <- wnba_shots |>
+    filter(shooting_team_name == input$teams)
+  
+  # plot
+  nyl_court +
+    stat_summary_hex(
+      data = team_data,
+      aes(
+        x = coordinate_y,
+        y = coordinate_x,
+        z = made_shot,
+        group = -1
+      ),
+      binwidth = c(2, 2),
+      fun = mean,
+      color = "black",
+      alpha = .8
+    ) +
+    scale_fill_gradient(low = "white", high = "darkorange3") +
+    labs(fill = "Shooting Rate",
+         title = paste(input$teams, "Shooting Efficiency")) +
+    theme(
+      legend.position = "bottom",
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 20)
+    )
+})
+```
+
+```{r, echo=FALSE}
+renderPlot({
+  # create data
+  team_data <- wnba_shots |>
+    filter(shooting_team_name == input$teams)
+  
+  # plot
+  nyl_court +
+    geom_hex(
+      data = team_data,
+      aes(x = coordinate_y, y = coordinate_x),
+      binwidth = c(2, 2),
+      alpha = 0.8,
+      color = "black"
+    ) +
+    scale_fill_gradient(low = "white", high = "darkorange3") +
+    labs(fill = "# of Shots",
+         title = paste(input$teams, "Shooting Frequency")) +
+    theme(
+      legend.position = "bottom",
+      plot.title = element_text(
+        hjust = 0.5,
+        face = "bold",
+        size = 20
+      )
+    )
+})
+```
+
+
+Row
+-------------------------
+
+### **Question & Plots Explanation:**
+
+**Question 1:** The first question we chose to look at is how the various audio features differ by genre. 
+
+
+
+**Plots Explanation:** The left plot analyzes these features over time and the right plot measures the frequency of each feature by genre. The viewer has the ability to compare different genres and observe how the audio features have changed over time or compare the frequency of various audio features.
+
+
+### **Observations / Conclusions:**
+
+- For the majority of genres, danceability, loudness, and liveness have increased over time.
+
+- For the majority of genres, energy, speechiness, acousticness, instrumentalness, valence, and tempo have decreased or stayed constant over time.
+
+- Genres with high Danceability also tend to have high Energy and Loudness.
+
+- All genres have low Speechiness, Acousticness, Instrumentalness, and Liveness.
+
+- R&B, Hip-Hop, and Latin all have similar audio features.
+
+- Country, Rock, and Indie have similar features.
+
+- Pop and EDM have similar features.
+
