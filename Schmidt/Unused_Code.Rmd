@@ -1,3 +1,9 @@
+# Team Colors
+
+```{r}
+scale_fill_manual(values = c("#C8102E", "#418FDE", "#643335", "#C4D600", "#FFCD00", "#000000", "#702F8A", "#236192", "#003DA5","#CB6015","#2C5234", "#0C2340")
+```
+
 ```{r}
 # wnba_shots <- wnba_shots |>
 #   group_by(shooting_team) |>
@@ -30,8 +36,8 @@
   
 ```
 
-
 ## Games With Close Scores (6 points or less) At Some Point In The Last 30 Seconds
+
 ```{r}
 # End of game shots where the score differential was less than 6 after the shot was taken
 end_of_game_shots <- wnba_shots |>
@@ -78,8 +84,8 @@ close_games_observing
 
 ```
 
-
 ## Overtime
+
 ```{r}
 # End of game shots where the score differential was less than 6 after the shot was taken
 end_of_game_shots <- wnba_shots |>
@@ -103,7 +109,8 @@ final_score <- wnba_shots |>
    select(game_id, final_score_differential)
 ```
 
-# Side By Side Win vs. Losses Home Versus Away 
+# Side By Side Win vs. Losses Home Versus Away
+
 ```{r}
 # Away Results In Close Games
 away_win_loss <- win_losses |> 
@@ -150,3 +157,21 @@ home_win_vs_losses + away_win_vs_losses +
    plot_layout(guides = "collect") 
 ```
 
+# Wrangled Data
+
+## Outcomes Occured Across Leagues In Close Games
+
+```{r, include=FALSE}
+# Adds Both Away And Home Win vs. losses
+win_losses <- close_games_observing |>
+  pivot_longer(Home_Result:Away_Result,
+               values_to = "win_or_loss",
+               names_to = "home_or_away_result") |> 
+  pivot_longer(home_team_name:away_team_name,
+               values_to = "teams",
+               names_to = "home_or_away_team") |> 
+  mutate(home_or_away_result = ifelse(home_or_away_result == "Home_Result", "Home", "Away"),
+         home_or_away_team = ifelse(home_or_away_team == "home_team_name", "Home", "Away"))
+         
+win_losses
+```
