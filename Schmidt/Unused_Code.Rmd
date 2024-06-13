@@ -101,3 +101,52 @@ final_score <- wnba_shots |>
   slice_head() |> 
    rename(final_score_differential = score_differential) |> 
    select(game_id, final_score_differential)
+```
+
+# Side By Side Win vs. Losses Home Versus Away 
+```{r}
+# Away Results In Close Games
+away_win_loss <- win_losses |> 
+  group_by(away_win_or_loss) |> 
+  summarise(occurances = n()) 
+
+
+#away_win_loss
+
+# Home Results In Close Games
+home_win_losses <- win_losses |> 
+  group_by(home_win_or_loss) |> 
+  summarise(occurances = (n())) 
+
+#home_win_losses
+
+# Graph of Away Team Win vs. Loss Proportion
+away_win_vs_losses <- ggplot(away_win_loss, aes(x = away_win_or_loss, y = occurances)) +
+  geom_bar(stat = "identity", aes(fill = away_win_or_loss)) +
+  scale_fill_manual(values = c("firebrick", "goldenrod1", "green4")) +
+  theme(legend.position = "none",
+        axis.title.y = element_blank()) +
+  labs(title = "Away Team's Outcome In Close Games",
+       x = "Outcome") +
+  geom_label(aes(label = occurances), position = position_stack(vjust = 0.5)) 
+
+#away_win_vs_losses
+
+# Graph of Home Team Win vs. Loss Proportion
+home_win_vs_losses <- ggplot(home_win_losses, aes(x = home_win_or_loss, y = occurances)) +
+  geom_bar(stat = "identity", aes(fill = home_win_or_loss)) +
+  scale_fill_manual(values = c("firebrick", "goldenrod1", "green4")) +
+  theme(legend.position = "none") +
+  geom_label(aes(label = occurances), position = position_stack(vjust = 0.5)) +
+  labs(title = "Home Team's Outcome In Close Games",
+       x = "Outcome",
+       y = "Occurances")
+
+#home_win_vs_losses
+
+library(patchwork)
+
+home_win_vs_losses + away_win_vs_losses + 
+   plot_layout(guides = "collect") 
+```
+

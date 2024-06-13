@@ -14,7 +14,7 @@ wnba_shots <- read_csv("https://raw.githubusercontent.com/36-SURE/36-SURE.github
 
 
 # Removed The All Star Game & Added Shooter Variable
-```{r}
+```{r, include=FALSE}
 wnba_shots <- wnba_shots |>
   filter(shooting_team != "Team Stewart" & shooting_team != "Team Wilson") |> 
   mutate(shooter_first_name = word(desc, 1),
@@ -29,91 +29,243 @@ wnba_shots <- wnba_shots |>
 #View(wnba_shots)
 ```
 
+# Shooting in the last 2 minutes of the Second Quarter
 
-# Overarching Question - How does time left in the game impact each team's performance? 
-
-
-## Shooting in the last 2 minutes of the Second Quarter
-
-```{r}
+```{r, include=FALSE}
 wnba_shots |>
   filter(qtr == 2 & quarter_seconds_remaining <= 120.0) |>
   arrange(quarter_seconds_remaining)
 ```
 
 
-## Shooting in the last 2 minutes of the Fourth Quarter
-```{r}
+# Shooting in the last 2 minutes of the Fourth Quarter
+```{r, include=FALSE}
 wnba_shots |>
   filter(qtr == 4 & quarter_seconds_remaining <= 120.0) |>
   arrange(quarter_seconds_remaining)
 ```
 
-# Last Thirty Seconds
+# Last Thirty Seconds In 4th Quarter
 
 ## Games With Close Scores (6 points or less) At Some Point In The Last 30 Seconds
-```{r}
-# Fourth quarter shots where the score differential was less than 6 after the shot was taken
+```{r, include=FALSE}
+# Shots taken in the last 30 seconds of the fourth quarter Where the score differential was less than 6 after the shot was taken
 end_of_game_shots <- wnba_shots |>
   filter(game_seconds_remaining <= 30 & score_differential %in% c(-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6) & qtr == 4) 
 
+# All Close Games
+all_close_games <- end_of_game_shots|> 
+  distinct()
 
-# Games That Had A Close Score At Some Point Within the last 30 seconds; The highest time where a shot occurred
+
+# All Shots Taken In Last 30 Seconds 
+all_shots <- wnba_shots|>
+  filter(game_seconds_remaining <= 30 & qtr == 4) 
+  
+# All Shots Taken In Last 30 Seconds In Close Games
+all_close_game_shots <- left_join(all_close_games, all_shots) 
+
+all_close_game_shots |> 
+  filter(game_id == "401507136")
+
+
+
+# The earliest time where a shot occurred for a close game
 close_games <- end_of_game_shots |> 
   group_by(game_id) |> 
   slice_max(game_seconds_remaining) |> 
   arrange(-free_throw) |> 
-  slice_head() |>
-  select(game_id, home_team_name, away_team_name, score_differential)
+  slice_head() |> 
+  select(game_id, home_team_name, away_team_name, score_differential) 
 
 
-# The last shot of the every game 
+# The score after the last shot of the every game 
 final_score <- wnba_shots |> 
   group_by(game_id) |> 
   slice_min(game_seconds_remaining) |> 
   arrange(free_throw) |> 
   slice_head() |> 
    rename(final_score_differential = score_differential) |> 
-   select(game_id, final_score_differential)
+   select(game_id, final_score_differential) 
 
-# Score Change From First Shot In Last 30 Seconds Where Score is 
+# Score Change From First Shot In Last 30 Seconds To Last Shot of Game & Final Outcomes
 close_games_observing <- left_join(close_games, final_score) |> 
   mutate(home_team_outcome =  
- if_else(score_differential > 0 & final_score_differential > 0 & score_differential == final_score_differential, "Kept Same Lead",
- if_else(score_differential > 0 & final_score_differential > 0 & score_differential > final_score_differential, "Kept Lead - Decreased",
- if_else(score_differential > 0 & final_score_differential > 0, "Kept Lead - Increased",
- if_else(score_differential > 0 & final_score_differential == 0, "Lost Lead - Tied", 
- if_else(score_differential > 0 & final_score_differential < 0, "Lost Lead - Lost", 
- if_else(score_differential < 0 & final_score_differential < 0 & score_differential == final_score_differential, "No Comeback",
- if_else(score_differential < 0 & final_score_differential < 0 & score_differential > final_score_differential, "Comeback - Not Enough",
- if_else(score_differential < 0 & final_score_differential < 0 & final_score_differential > score_differential, "No Comeback - Deficity Increased",
- if_else(score_differential < 0 & final_score_differential == 0, "Comeback - Tied",
- if_else(score_differential == 0 & final_score_differential == 0, "No Comeback - Tied",
- if_else(score_differential == 0 & final_score_differential > 0, "Took Lead From Tie",
- if_else(score_differential == 0 & final_score_differential < 0, "Lost From Tie", 
-         "Took Lead")))))))))))))
+ if_else(score_differential > 0 & final_score_differential > 0 & score_differential == final_score_differential, "Won - Kept Same Lead",
+ if_else(score_differential > 0 & final_score_differential > 0 & score_differential > final_score_differential, "Won - Lead Decreased",
+ if_else(score_differential > 0 & final_score_differential > 0, "Won - Extended Lead",
+ if_else(score_differential > 0 & final_score_differential == 0, "Tied - Lost Lead", 
+ if_else(score_differential > 0 & final_score_differential < 0, "Lost - Lost Lead", 
+ if_else(score_differential < 0 & final_score_differential < 0 & score_differential == final_score_differential, "Lost - No Comeback",
+ if_else(score_differential < 0 & final_score_differential < 0 & score_differential > final_score_differential, "Lost - Deficit Increased",
+ if_else(score_differential < 0 & final_score_differential < 0 & final_score_differential > score_differential, "Lost - Deficit Decreased",
+ if_else(score_differential < 0 & final_score_differential == 0, "Tied - Comeback",
+ if_else(score_differential == 0 & final_score_differential == 0, "Tied - No Change",
+ if_else(score_differential == 0 & final_score_differential > 0, "Won - From Tie",
+ if_else(score_differential == 0 & final_score_differential < 0, "Lost - From Tie", 
+         "Won - Took Lead From Loss")))))))))))),
+ away_team_outcome =  
+ if_else(score_differential > 0 & final_score_differential > 0 & score_differential == final_score_differential, "Lost - No Comeback",
+ if_else(score_differential > 0 & final_score_differential > 0 & score_differential > final_score_differential, "Lost - Deficit Decreased",
+ if_else(score_differential > 0 & final_score_differential > 0, "Lost - Deficit Increased",
+ if_else(score_differential > 0 & final_score_differential == 0, "Tied - Comeback", 
+ if_else(score_differential > 0 & final_score_differential < 0, "Won - Took Lead From Loss", 
+ if_else(score_differential < 0 & final_score_differential < 0 & score_differential == final_score_differential, "Won - Kept Same Lead",
+ if_else(score_differential < 0 & final_score_differential < 0 & score_differential > final_score_differential, "Won - Extended Lead",
+ if_else(score_differential < 0 & final_score_differential < 0 & final_score_differential > score_differential, "Won - Lead Decreased",
+ if_else(score_differential < 0 & final_score_differential == 0, "Tied - Lost Lead",
+ if_else(score_differential == 0 & final_score_differential == 0, "Tied - No Change",
+ if_else(score_differential == 0 & final_score_differential > 0, "Lost - From Tie",
+ if_else(score_differential == 0 & final_score_differential < 0, "Won - From Tie", 
+         "Lost - Lost Lead"))))))))))))
+ )
 
-close_games_observing |> 
-  filter(str_detect(home_team_outcome, "[Tt]ie"))
+close_games_observing
+```
 
+# Overarching Question 1 - How Does The League Overall Perform in Close Home Compared To Close Away Games?
+
+## Outcomes Related To Home and Away
+```{r, include=FALSE}
+home_game_results <- close_games_observing |> 
+  ungroup() |> 
+  group_by(home_team_name, home_team_outcome) |>
+  summarise(num_times_occured = n()) |> 
+  rename(team_name = home_team_name) |> 
+  mutate(win_or_loss = if_else(str_detect(home_team_outcome, "^Won"), "Win",
+                       if_else(str_detect(home_team_outcome, "^Lost"), "Loss", "Tie")))
+
+#home_game_results
+
+num_home_outcomes <- close_games_observing |>
+  ungroup() |> 
+  select(home_team_outcome) |> 
+  count(home_team_outcome) |> 
+  rename(num_times_home = n)
+
+#num_home_outcomes
+
+away_game_results <- close_games_observing |> 
+  ungroup() |> 
+  group_by(away_team_name, away_team_outcome) |> 
+  summarise(times_occured = n()) |> 
+  rename(team_name = away_team_name) |> 
+  mutate(win_or_loss = if_else(str_detect(away_team_outcome, "^Won"), "Win",
+                       if_else(str_detect(away_team_outcome, "^Lost"), "Loss", "Tie")))
+
+# away_game_results
+
+num_away_outcomes <- close_games_observing |>
+  ungroup() |> 
+  select(away_team_outcome) |> 
+  count(away_team_outcome) |> 
+  rename(num_times_away = n)
+
+#num_away_outcomes
+
+
+
+possible_outcomes <- full_join(num_home_outcomes, num_away_outcomes, join_by(home_team_outcome == away_team_outcome))
+
+
+
+possible_outcomes[is.na(possible_outcomes)] <- 0
+
+possible_outcomes <- possible_outcomes |> 
+  mutate(win_or_loss = if_else(str_detect(home_team_outcome, "^Won"), "Win",
+                       if_else(str_detect(home_team_outcome, "^Lost"), "Loss", "Tie"))) |> 
+  rename(outcome = home_team_outcome) 
+
+possible_outcomes <- possible_outcomes |> 
+  mutate(outcome = factor(possible_outcomes$outcome, levels = c("Lost - Lost Lead", "Lost - Deficit Increased", "Lost - No Comeback", "Lost - Deficit Decreased", "Lost - From Tie", "Tied - Lost Lead", "Tied - No Change", "Tied - Comeback", "Won - Lead Decreased", "Won - Kept Same Lead", "Won - Extended Lead", "Won - From Tie", "Won - Took Lead From Loss")))
+ 
+
+# possible_outcomes
+
+# Adds Both Away And Home Win vs. losses
+win_losses <- close_games_observing |>
+  mutate(Home = if_else(str_detect(home_team_outcome, "^Won"), "Win",
+                       if_else(str_detect(home_team_outcome, "^Lost"), "Loss", "Tie")),
+         Away = if_else(str_detect(away_team_outcome, "^Won"), "Win",
+                       if_else(str_detect(away_team_outcome, "^Lost"), "Loss", "Tie"))) |> 
+  pivot_longer(Home:Away,
+               values_to = "win_or_loss",
+               names_to = "home_or_away") 
+```
+
+## Outcomes Occured Across Leagues In Close Games
+```{r}
+# Home vs. Away Outcomes
+win_vs_losses <- ggplot(win_losses, aes(x = home_or_away)) +
+  geom_bar(aes(fill = win_or_loss)) +
+  scale_fill_manual(values = c("firebrick", "goldenrod1", "green4")) +
+  labs(title = "Outcomes For Home And Away Teams In Close Games",
+       x = "Home vs. Away",
+       fill = "Result") 
+ # geom_label(aes(label = sta), position = position_stack(vjust = 0.5))
+
+win_vs_losses
+```
+Plot Description: From this plot we can determine that in a close game, the away team is more likely to win than the home team. 
+
+```{r}
+# Home Outcome Types Occured Across Leagues In Close Games
+
+home_outcomes <- ggplot(possible_outcomes, aes(x = win_or_loss, y = num_times_home, fill = outcome)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Occurences of Each Outcome Type For Home Teams In Close Games",
+       y = "Occurences",
+       fill = "Outcome") +
+  scale_fill_manual(values = c("firebrick4", "firebrick", "firebrick3", "firebrick2", "firebrick1", "darkorange1", "goldenrod1", "gold", "lightgreen", "green1","green3", "green4", "darkgreen")) +
+  theme(axis.title.x = element_blank()) 
+
+
+
+# Away Outcome Types Occured Across Leagues In Close Games
+away_outcomes <- ggplot(possible_outcomes, aes(x = win_or_loss, y = num_times_away, fill = outcome)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Occurences of Each Outcome Type For Away Teams In Close Games",
+       y = "Occurences",
+       fill = "Outcome") +
+  scale_fill_manual(values = c("firebrick4", "firebrick", "firebrick3", "firebrick2", "firebrick1", "darkorange1", "goldenrod1", "gold", "lightgreen", "green1","green3", "green4", "darkgreen"))+
+  theme(axis.title.x = element_blank()) 
+
+# Combined Graph of Away vs Home Team Outcomes; Point Out Away Teams Win More In Close Games
+library(patchwork)
+
+away_outcomes + home_outcomes +
+  plot_layout(guides = "collect", nrow = 2) +
+  labs("Occurences Of Each Outcome Type For Both Home and Away Teams")
+```
+
+**Plot Description:** From the *Occurences Of Each Outcome Type For Both Home and Away Teams* graph, we can learn that in close games, the team that won (regardless of if they were home or away) most likely extended their lead between the time of the first shot in the last 30 seconds and the end of the game. This corresponds with the idea that the team that lost, most likely lost with a higher deficit than what they were down after the first shot in the last 30 seconds of the game. For games that ended the 4th quarter with a tie, however, it is most likely that a team had the lead after the first shot in the last 30 seconds but then the other team tied it up. There were slightly more occurrences of the away team having the lead and losing it, however, it is hard to predict if home or away is a predictor because there were only a handful of occurrences. 
+
+## Atlanta Away Game Outcomes
+```{r}
+away_game_results |> 
+  filter(team_name == "Atlanta") |> 
+  ggplot(aes(x = win_or_loss, y = times_occured, fill = away_team_outcome)) +
+  geom_bar(stat = "identity", position = "dodge") 
+
+# +
+#   facet_wrap(~team_name, nrow = 4)
 
 ```
 
+# Overarching Question - How does time left in the game impact each team's performance? 
 
 ## Teams Who Shot Best In Close Games (30 Seconds)
-```{r}
+```{r, include=FALSE}
 shots_made_data1 <- end_of_game_shots |>
    mutate(made_shot = if_else(made_shot == "TRUE", "Made", "Missed")) 
 
- shots_made_data1
+
 
  shots_made_data <- end_of_game_shots |>
    mutate(made_shot = if_else(made_shot == "TRUE", 1, 0)) |>
    filter(made_shot == 1) |>
    group_by(shooting_team) |>
    summarise(shots_made = n())
-
- shots_made_data
 
  shots_taken_data <- end_of_game_shots |>
    group_by(shooting_team) |>
@@ -244,8 +396,6 @@ library(reshape2)
 df_long <- melt(close_game_appearances2)
 
 df_long
-
-library(ggplot2)
 
 ggplot(df_long, aes(x = team_name, y = value, fill = variable)) +
   geom_bar(stat = "identity", position = "dodge", color = "black") +
