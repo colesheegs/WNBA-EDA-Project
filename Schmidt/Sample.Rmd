@@ -24,11 +24,12 @@ wnba_shots <- wnba_shots |>
          free_throw = if_else(str_detect(shot_type, "[Ff]ree [Tt]hrow - 3 of"), 3,
        if_else(str_detect(shot_type, "[Ff]ree [Tt]hrow - 2 of"), 2,
                if_else(str_detect(shot_type, "[Ff]ree [Tt]hrow - 1 of") | str_detect(shot_type, "[Tt]echnical"), 1, 0))),
-       made_shot = if_else(made_shot == "TRUE", "Made", "Missed"))|>  
+       made_shot = if_else(made_shot == "TRUE", "Made", "Missed"),
+       Shooting_Team_Home_Away = if_else(shooting_team == home_team_name, "Home", "Away"))|>  
  select(! c(shooter_first_name, shooter_last_name)) 
   
 
-View(wnba_shots)
+#View(wnba_shots)
 ```
 
 # Shooting in the last 2 minutes of the Second Quarter
@@ -235,10 +236,13 @@ away_outcomes + home_outcomes +
   labs("Occurences Of Each Outcome Type For Both Home and Away Teams")
 ```
 
+
 **Plot Description:** From the *Occurences Of Each Outcome Type For Both Home and Away Teams* graph, we can learn that in close games, the team that won (regardless of if they were home or away) most likely extended their lead between the time of the first shot in the last 30 seconds and the end of the game. This corresponds with the idea that the team that lost, most likely lost with a higher deficit than what they were down after the first shot in the last 30 seconds of the game. For games that ended the 4th quarter with a tie, however, it is most likely that a team had the lead after the first shot in the last 30 seconds but then the other team tied it up. There were slightly more occurrences of the away team having the lead and losing it, however, it is hard to predict if home or away is a predictor because there were only a handful of occurrences.
 
 ## League Shooting Percentage Home vs. Away 
 ```{r}
+win_losses
+
 win_vs_losses <- ggplot(win_losses, aes(x = home_or_away)) +
   geom_bar(aes(fill = win_or_loss)) +
   scale_fill_manual(values = c("firebrick", "goldenrod1", "green4")) +
@@ -254,7 +258,7 @@ all_close_game_shots
 all_close_game_shots |> 
   group_by(shot_type, made_shot) |> 
   summarise(num_shots = n()) |>
-  ggplot(aes(x = made_shot)) +
+  ggplot(aes(x = home_or_away, made_shot)) +
   geom_bar(stat = "identity", position = "dodge", color = "black") +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9)) +
   scale_fill_manual(values = c("white", "#E77500"))
