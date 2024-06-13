@@ -6,7 +6,7 @@ output:
     orientation: rows
     theme: 
       version: 4
-      bootswatch: sandstone
+      bootswatch: flatly
 runtime: shiny
 ---
 
@@ -68,6 +68,7 @@ library(tidyverse)
 library(flexdashboard)
 library(shiny)
 library(sportyR)
+library(stringr)
 ```
 
 ```{r, echo = FALSE}
@@ -76,21 +77,39 @@ library(sportyR)
 wnba_shots <- read_csv("https://raw.githubusercontent.com/36-SURE/36-SURE.github.io/main/data/wnba_shots.csv")
 
 #### Clean dataset
-wnba_shots <- wnba_shots |> 
+wnba_shots <- wnba_shots |>
   # filter by regular season and remove outliers
-  filter(game_type == 2 & abs(coordinate_x) >= 10) |> 
+  filter(game_type == 2 & abs(coordinate_x) >= 10) |>
   mutate(
     # take the absolute value of the x coordinate to only get one side of the court
     coordinate_x = abs(coordinate_x),
     # rename shooting_team to include team name
-    shooting_team_name = case_match(shooting_team, "Atlanta" ~ "Atlanta Dream", 
-                              "Chicago" ~ "Chicago Sky", "Connecticut" ~ "Connecticut Sun", 
-                              "Dallas" ~ "Dallas Wings", "Indiana" ~ "Indiana Fever", 
-                              "Las Vegas" ~ "Las Vegas Aces", "Los Angeles" ~ "Los Angeles Spark", 
-                              "Minnesota" ~ "Minnesota Lynx", "New York" ~ "New York Liberty", 
-                              "Phoenix" ~ "Phoenix Mercury", "Seattle" ~ "Seattle Storm", 
-                              "Washington" ~ "Washington Mystics")
-         ) |>
+    shooting_team_name = case_match(
+      shooting_team,
+      "Atlanta" ~ "Atlanta Dream",
+      "Chicago" ~ "Chicago Sky",
+      "Connecticut" ~ "Connecticut Sun",
+      "Dallas" ~ "Dallas Wings",
+      "Indiana" ~ "Indiana Fever",
+      "Las Vegas" ~ "Las Vegas Aces",
+      "Los Angeles" ~ "Los Angeles Spark",
+      "Minnesota" ~ "Minnesota Lynx",
+      "New York" ~ "New York Liberty",
+      "Phoenix" ~ "Phoenix Mercury",
+      "Seattle" ~ "Seattle Storm",
+      "Washington" ~ "Washington Mystics"
+    ),
+    shooting_player = ifelse(
+      str_detect(desc, "blocks") == TRUE,
+      sub(
+        ".*?\\b(?:blocks)\\W+(\\w+(?:\\W+\\w+){0,2})\\b(?:'s| 's| B. 's)\\s.*",
+        "\\1",
+        desc,
+        perl = TRUE
+      ),
+      sub("\\ makes.*|\\ misses.*|\\ B. makes.*|\\ B. misses.*", "\\1", desc)
+    )
+  ) |>
   # remove Free Throws and the All-Star game shots
   slice(-c(grep("^Free Throw", shot_type), grep("^Team", shooting_team)))
 
@@ -248,14 +267,22 @@ inputPanel(
                                     "Indiana Fever", "Las Vegas Aces",
                                     "Los Angeles Spark", "Minnesota Lynx",
                                     "New York Liberty", "Phoenix Mercury",
-                                    "Seattle Storm", "Washington Mystics")),
-  selectInput("players",
-                        "Select a Player",
-                        choices = input$teams)
+                                    "Seattle Storm", "Washington Mystics"))
 )
 
 
 ```
+```{r}
+renderUI({
+           selectInput("players",
+                        "Select a Player",
+                        choices = wnba_shots |> 
+                filter(shooting_team_name == as.character(input$teams)) |> 
+                  distinct(shooting_player) |> 
+                  arrange(shooting_player))
+        })
+```
+
 
 Row 
 -------------------------
@@ -263,16 +290,16 @@ Row
 ```{r, echo = FALSE}
 renderPlot({
   # create data
-  team_data <- wnba_shots |>
-    filter(shooting_team_name == input$teams)
+  player_data <- wnba_shots |> 
+  filter(shooting_player == input$players & shooting_team_name == input$teams)
   
   # plot
   nyl_court +
     stat_summary_hex(
-      data = team_data,
+      data = player_data,
       aes(
-        x = coordinate_y,
         y = coordinate_x,
+        x = coordinate_y,
         z = made_shot,
         group = -1
       ),
@@ -282,8 +309,7 @@ renderPlot({
       alpha = .8
     ) +
     scale_fill_gradient(low = "white", high = "darkorange3") +
-    labs(fill = "Shooting Rate",
-         title = paste(input$teams, "Shooting Efficiency")) +
+    labs(fill = "Shooting Rate", title = paste(input$players, "Shooting Efficiency")) +
     theme(
       legend.position = "bottom",
       plot.title = element_text(hjust = 0.5, face = "bold", size = 20)
@@ -294,28 +320,23 @@ renderPlot({
 ```{r, echo=FALSE}
 renderPlot({
   # create data
-  team_data <- wnba_shots |>
-    filter(shooting_team_name == input$teams)
+  player_data <- wnba_shots |> 
+  filter(shooting_player == input$players & shooting_team_name == input$teams)
   
   # plot
   nyl_court +
     geom_hex(
-      data = team_data,
-      aes(x = coordinate_y, y = coordinate_x),
+      data = player_data,
+      aes(y = coordinate_x, x = coordinate_y),
       binwidth = c(2, 2),
-      alpha = 0.8,
-      color = "black"
+      color = "black",
+      alpha = 0.8
     ) +
     scale_fill_gradient(low = "white", high = "darkorange3") +
-    labs(fill = "# of Shots",
-         title = paste(input$teams, "Shooting Frequency")) +
+    labs(fill = "# of Shots", title = paste(input$players, "Shooting Frequency")) +
     theme(
       legend.position = "bottom",
-      plot.title = element_text(
-        hjust = 0.5,
-        face = "bold",
-        size = 20
-      )
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 20)
     )
 })
 ```
