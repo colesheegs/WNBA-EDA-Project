@@ -33,7 +33,11 @@ scale_fill_manual(values = c("#C8102E", "#418FDE", "#643335", "#C4D600", "#FFCD0
 #   group_by(shooting_team, home_or_away, shot_value, attempted_point_value) |>
 #   summarise(count = n())
 #   
-  
+
+
+color_vector <- c("firebrick4", "firebrick", "firebrick3", "firebrick2", "firebrick1", "darkorange1", "goldenrod1", "gold", "lightgreen", "green1","green3", "green4", "darkgreen"))
+
+levels(close_games_observing$out)
 ```
 
 ## Games With Close Scores (6 points or less) At Some Point In The Last 30 Seconds
@@ -175,3 +179,78 @@ win_losses <- close_games_observing |>
          
 win_losses
 ```
+
+
+# Related To Win vs. Loss Types Home and Away Per Team
+```{r}
+possible_outcomes2 <- full_join(home_game_results, possible_outcomes1)
+
+possible_outcomes2
+
+close_games_observing |> 
+  filter(home_team_name == "Atlanta") |> 
+  full_join()
+
+close_games_observing |> 
+  filter(away_team_name == "Atlanta")
+
+# Number of Occurences of All Outcomes For Home vs. Away
+possible_outcomes2 <- full_join(home_game_results, away_game_results, by = "outcome") |> 
+  ungroup()|> 
+  mutate(num_times_home_per_team = replace_na(num_times_home_per_team, 0),
+         times_occured_away_per_team = replace_na(times_occured_away_per_team, 0),
+         Win_Loss = ifelse(is.na(Away_Result), Home_Result, Away_Result)) |> 
+  select(-Home_Result, -Away_Result) |> 
+  group_by(home_team_name, num_times_home_per_team)
+
+possible_outcomes2
+
+|> 
+  ungroup()|> 
+  mutate(num_times_home_per_team = replace_na(num_times_home_per_team, 0),
+         times_occured_away_per_team = replace_na(times_occured_away_per_team, 0),
+         Win_Loss = ifelse(is.na(Away_Result), Home_Result, Away_Result)) |> 
+  select(-Home_Result, -Away_Result) |> 
+  group_by(home_team_name, num_times_home_per_team)
+
+possible_outcomes2
+```
+
+
+# Team Outcome Type Home vs. Away
+```{r}
+# All Possible Outcomes
+possible_outcomes1 <- data.frame(outcome = c("Won - Kept Same Lead", "Won - Lead Decreased", "Won - Extended Lead", "Tied - Lost Lead", "Lost - Lost Lead", "Lost - No Comeback", "Lost - Deficit Increased", "Lost - Deficit Decreased", "Tied - Comeback", "Tied - No Change", "Won - From Tie", "Lost - From Tie", "Won - Took Lead From Loss"),
+                                 Home_Result = c("Win", "Win", "Win", "Tie", "Loss", "Loss", "Loss", "Loss", "Tie", "Tie", "Win", "Loss", "Win")) 
+
+#possible_outcomes1
+
+
+# Atlanta's Home Outcomes
+Atlanta <- home_game_results |> 
+  filter(home_team_name == "Atlanta")
+
+Atlanta
+
+Atlanta_final <- full_join(Atlanta, possible_outcomes1) |> 
+  mutate(num_times_home_per_team = replace_na(num_times_home_per_team, 0),
+         home_team_name = replace_na(home_team_name, "Atlanta")) |> 
+  ungroup()
+
+Atlanta_final
+
+
+# Including All Outcomes
+Atlanta_home_outcomes <- Atlanta_final |> 
+  ggplot(aes(x = Home_Result, y = num_times_home_per_team, fill = outcome)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Occurences of Each Outcome Type For Home Teams",
+       y = "Occurences",
+       fill = "Outcome") +
+  scale_fill_manual(values = win_loss_color_vector) +
+  theme(axis.title.x = element_blank()) 
+
+Atlanta_home_outcomes
+
+```
+
