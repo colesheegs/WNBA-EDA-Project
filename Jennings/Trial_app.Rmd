@@ -79,12 +79,15 @@ wnba_shots <- read_csv("https://raw.githubusercontent.com/36-SURE/36-SURE.github
 #### Clean dataset
 wnba_shots <- wnba_shots |>
   # filter by regular season and remove outliers
-  filter(game_type == 2 & abs(coordinate_x) >= 10) |>
+  filter(game_type == 2 & abs(coordinate_x) >= 10 &
+           # remove Free Throws and the All-Star game shots
+           str_like(shooting_team, "Team%") == FALSE &
+           str_like(shot_type, "Free Throw%") == FALSE) |>
   mutate(
     # take the absolute value of the x coordinate to only get one side of the court
     coordinate_x = abs(coordinate_x),
     # rename shooting_team to include team name
-    shooting_team_name = case_match(
+    shooting_team = case_match(
       shooting_team,
       "Atlanta" ~ "Atlanta Dream",
       "Chicago" ~ "Chicago Sky",
@@ -109,9 +112,7 @@ wnba_shots <- wnba_shots |>
       ),
       sub("\\ makes.*|\\ misses.*|\\ B. makes.*|\\ B. misses.*", "\\1", desc)
     )
-  ) |>
-  # remove Free Throws and the All-Star game shots
-  slice(-c(grep("^Free Throw", shot_type), grep("^Team", shooting_team)))
+  )
 
 # WNBA court (New York Libery)
 nyl_court <- sportyR::geom_basketball("WNBA", display = "offense", rotation = 90,
@@ -167,7 +168,7 @@ Row
 renderPlot({
   # create data
   team_data <- wnba_shots |>
-    filter(shooting_team_name == input$teams)
+    filter(shooting_team == input$teams)
   
   # plot
   nyl_court +
@@ -198,7 +199,7 @@ renderPlot({
 renderPlot({
   # create data
   team_data <- wnba_shots |>
-    filter(shooting_team_name == input$teams)
+    filter(shooting_team == input$teams)
   
   # plot
   nyl_court +
@@ -277,7 +278,7 @@ renderUI({
            selectInput("players",
                         "Select a Player",
                         choices = wnba_shots |> 
-                filter(shooting_team_name == as.character(input$teams)) |> 
+                filter(shooting_team == as.character(input$teams)) |> 
                   distinct(shooting_player) |> 
                   arrange(shooting_player))
         })
@@ -291,7 +292,7 @@ Row
 renderPlot({
   # create data
   player_data <- wnba_shots |> 
-  filter(shooting_player == input$players & shooting_team_name == input$teams)
+  filter(shooting_player == input$players & shooting_team == input$teams)
   
   # plot
   nyl_court +
@@ -321,7 +322,7 @@ renderPlot({
 renderPlot({
   # create data
   player_data <- wnba_shots |> 
-  filter(shooting_player == input$players & shooting_team_name == input$teams)
+  filter(shooting_player == input$players & shooting_team == input$teams)
   
   # plot
   nyl_court +
