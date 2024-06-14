@@ -190,7 +190,7 @@ playoff1 |>
   arrange(desc(prop)) |> 
   head(n = 10) |> 
   ggplot(aes(y = reorder(shooter, prop), x = prop)) +
-  geom_col(fill = "orange1") +
+  geom_col(fill = "#E77500") +
   theme_bw() +
   geom_label(aes(label = prop), size = 2.5, label.size = 0.5) +
   labs(
@@ -214,7 +214,7 @@ playoff1 |>
   arrange(prop) |> 
   head(n = 10) |> 
   ggplot(aes(y = reorder(shooter, -prop), x = prop)) +
-  geom_col(fill = "orange") +
+  geom_col(fill = "#E77500") +
   geom_label(aes(label = prop), size = 2.5, label.size = 0.5) +
   theme_bw() +
   labs(
@@ -242,7 +242,7 @@ wnba_shots <- wnba_shots |>
 
 
 ```{r}
-## Graph 1
+# Graph 1
 wnba_shots |>
   filter(game_type == 2) |> 
   select(time_group, shooting_team, made_shot) |> 
@@ -271,7 +271,7 @@ wnba_shots |>
 
 
 
-## Graph 2
+# Graph 2
 wnba_shots |> 
   filter(game_type == 3) |> 
   group_by(time_group, shooting_team) |> 
@@ -304,7 +304,7 @@ wnba_shots |>
   filter(game_type == 2) |> 
   group_by(time_group, shooting_team) |> 
   summarise(num_shots = n()) |> 
-  ggplot(aes(x = time_group, y = num_shots, color = shooting_team)) +
+  ggplot(aes(x = time_group, y = log(num_shots), color = shooting_team)) +
   geom_line(alpha = 0.4) +
   geom_smooth(alpha = 0.2, se = FALSE) +
   facet_wrap(vars(shooting_team)) +
@@ -329,7 +329,7 @@ wnba_shots |>
   filter(game_type == 3) |> 
   group_by(time_group, shooting_team) |> 
   summarise(num_shots = n()) |> 
-  ggplot(aes(x = time_group, y = num_shots, color = shooting_team)) +
+  ggplot(aes(x = time_group, y = log(num_shots), color = shooting_team)) +
   geom_line(alpha = 0.4) +
   geom_smooth(alpha = 0.2, se = FALSE) +
   facet_wrap(vars(shooting_team)) +
@@ -350,6 +350,93 @@ wnba_shots |>
 
 
 
+
+```{r}
+# Graph 1
+wnba_shots |>
+  filter(game_type == 2) |> 
+  select(time_group, shooting_team, made_shot) |> 
+  group_by(time_group, shooting_team) |> 
+  summarise(num_shots = n(), 
+            total_shots_made = sum(made_shot)) |> 
+  mutate(prop = round(total_shots_made / num_shots, 3)) |>
+  ggplot(aes(x = time_group, y = prop, color = shooting_team)) +
+  geom_line(alpha = 0.3) +
+  geom_line(stat = "smooth", alpha = 0.6, linewidth = 1.5) +
+  # geom_smooth(alpha = 0.2, se = FALSE) +
+  geom_hline(yintercept = 0.5, color = "red", size = 1, linetype = "dashed") +
+  # facet_wrap(~ shooting_team) +
+  scale_x_reverse() +
+  theme_bw() +
+  labs(
+    title = "Time Series of Goal Percentage in a Game (Regular Season)",
+    x = "Game Time Remaining",
+    y = "Shooting Percentage",
+    caption = "Data Courtesy of Wehoop"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face= "bold")
+  )
+
+
+
+
+# Graph 2
+wnba_shots |> 
+  filter(game_type == 3) |> 
+  group_by(time_group, shooting_team) |> 
+  summarise(num_shots = n(), 
+            total_shots_made = sum(made_shot)) |> 
+  mutate(prop = round(total_shots_made / num_shots, 3)) |> 
+  ggplot(aes(x = time_group, y = prop, color = shooting_team)) +
+  geom_line(alpha = 0.3) +
+  geom_line(stat = "smooth", alpha = 0.6, linewidth = 1.5) +
+  # geom_smooth(alpha = 0.2, se = FALSE) +
+  geom_hline(yintercept = 0.5, color = "red", size = 1, linetype = "dashed") +
+  # facet_wrap(vars(shooting_team)) +
+  scale_x_reverse() +
+  theme_bw() +
+  labs(
+    title = "Time Series of Goal Percentage in a Game (Playoffs)",
+    x = "Game Time Remaining", 
+    y = "Shooting Percentage",
+    caption = "Data Courtesy of Wehoop"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face= "bold")
+  )
+
+
+
+# Graph 3
+wnba_shots |> 
+  filter(game_type == 2) |> 
+  group_by(time_group, shooting_team) |> 
+  summarise(num_shots = n()) |> 
+  ggplot(aes(x = time_group, y = log(num_shots), color = shooting_team)) +
+  geom_line(alpha = 0.4) +
+  geom_smooth(alpha = 0.2, se = FALSE) +
+  # facet_wrap(vars(shooting_team)) +
+  scale_x_reverse() +
+  theme_bw() +
+  labs(
+    title = "Time Series of Shots in a Game (Regular Season)",
+    x = "Game Time Remaining", 
+    y = "Number of Shots",
+    caption = "Data Courtesy of Wehoop"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face= "bold")
+  )
+```
+
+
+
+
+
 ## Clustering
 
 
@@ -357,7 +444,7 @@ wnba_shots |>
 ```{r}
 # Cluster 1
 
-set.seed(10)
+set.seed(87)
 
 
 # creating new dataset
@@ -446,7 +533,7 @@ cluster_playoff2 |>
   ggthemes::scale_color_colorblind() +
   theme(legend.position = "bottom") +
   coord_fixed() +
-  theme_bw()
+  theme_bw() +
   labs(
     x = "Total Points",
     y = "Shots Attempted",
