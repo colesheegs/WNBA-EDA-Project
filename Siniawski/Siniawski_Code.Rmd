@@ -32,9 +32,48 @@ wnba_shots <- wnba_pbp |>
          quarter_seconds_remaining = start_quarter_seconds_remaining,
          game_seconds_remaining = start_game_seconds_remaining)
 
+wnba_shots <- wnba_shots |> 
+  filter(shooting_team %in% c("Seattle", "Chicago", "Washington", "Atlanta", "Minnesota", "Indiana", "Los Angeles", "Connecticut", "Dallas", "Phoenix", "New York", "Las Vegas")) |> 
+  mutate(made_shot = ifelse(made_shot == "TRUE", 1, 0)) |> 
+  mutate(
+    # take the absolute value of the x coordinate to only get one side of the court
+    coordinate_x = abs(coordinate_x),
+    # rename shooting_team to include team name
+    shooting_team = case_match(
+      shooting_team,
+      "Atlanta" ~ "Atlanta Dream",
+      "Chicago" ~ "Chicago Sky",
+      "Connecticut" ~ "Connecticut Sun",
+      "Dallas" ~ "Dallas Wings",
+      "Indiana" ~ "Indiana Fever",
+      "Las Vegas" ~ "Las Vegas Aces",
+      "Los Angeles" ~ "Los Angeles Spark",
+      "Minnesota" ~ "Minnesota Lynx",
+      "New York" ~ "New York Liberty",
+      "Phoenix" ~ "Phoenix Mercury",
+      "Seattle" ~ "Seattle Storm",
+      "Washington" ~ "Washington Mystics"
+    ),
+    shooter = ifelse(
+      str_detect(desc, "blocks") == TRUE,
+      sub(
+        ".*?\\b(?:blocks)\\W+(\\w+(?:\\W+\\w+){0,2})\\b(?:'s| 's| B. 's)\\s.*",
+        "\\1",
+        desc,
+        perl = TRUE
+      ),
+      sub("\\ makes.*|\\ misses.*|\\ B. makes.*|\\ B. misses.*", "\\1", desc)
+    )
+  )
+
+
+color_vector <- c("Atlanta Dream" = "#C8102E", "Chicago Sky" = "#418FDE", "Connecticut Sun" = "#643335", "Dallas Wings" = "#C4D600", "Indiana Fever" = "#FFCD00", "Las Vegas Aces" = "#000000", "Los Angeles Spark" = "#702F8A", "Minnesota Lynx" = "#236192", "New York Liberty" = "#003DA5", "Phoenix Mercury" = "#CB6015", "Seattle Storm" = "#2C5234", "Washington Mystics" = "#0C2340")
+
+
 # shot_chart <- wnba_shotchartdetail()
 # 
 # shot_chart <- shot_chart$Shot_Chart_Detail
+
 ```
 
 
@@ -49,6 +88,7 @@ wnba_shots |>
   geom_col(aes(fill = shooting_team)) +
   theme_bw() + 
   geom_label(aes(label = total_shot_value), size = 3) + 
+  scale_fill_manual(values = color_vector) +
   labs(
     title = "New York and Vegas Scoring More",
     x = "Total Shot Values", 
@@ -68,39 +108,32 @@ wnba_shots |>
 
 
 ```{r}
-wnba_shots2 <- wnba_shots |> 
-  filter(shooting_team %in% c("Seattle", "Chicago", "Washington", "Atlanta", "Minnesota", "Indiana", "Los Angeles", "Connecticut", "Dallas", "Phoenix", "New York", "Las Vegas")) |> 
-  mutate(made_shot = ifelse(made_shot == "TRUE", 1, 0))
-
-wnba_shots2 <- wnba_shots2[!grepl('Free Throw', wnba_shots2$shot_type),]
-
-wnba_shots2 <- 
-  wnba_shots2 |> 
-  mutate(shooter_first = word(desc, 1),
-         shooter_last = word(desc, 2), 
-         shooter = paste(shooter_first, shooter_last))
+# wnba_shots2 <- wnba_shots[!grepl('Free Throw', wnba_shots$shot_type),]
 ```
 
 
 
 ```{r}
-wnba_shots2 |> 
+
+wnba_shots |> 
+  filter(game_type == 2) |> 
   group_by(shooting_team) |> 
   summarise(freq = n(),
     total_shots_made = sum(made_shot)) |> 
   mutate(prop = round(total_shots_made / freq, 3),
-    shooting_team = fct_reorder(shooting_team, prop)) |>
+    shooting_team = fct_reorder(shooting_team, prop)) |> 
   ggplot(aes(y = shooting_team, x = prop)) +
   geom_col(aes(fill = shooting_team)) +
+  scale_fill_manual(values = color_vector) +
   theme_bw() +
   geom_label(aes(label = prop), size = 2.5) +
   labs(
-    title = "Vegas Racks Up the Points",
+    title = "Shooting Percentage in Regular Season",
     x = "Proportion",
     y = "Teams",
     fill = "Teams",
     caption = "Data Courtesy of Wehoop"
-  ) + 
+  ) +
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
         legend.position = "none",
@@ -110,7 +143,8 @@ wnba_shots2 |>
 
 
 ```{r}
-wnba_shots2 |> 
+
+wnba_shots |> 
   filter(game_type == 3) |> 
   group_by(shooting_team) |> 
   summarise(freq = n(),
@@ -119,10 +153,11 @@ wnba_shots2 |>
     shooting_team = fct_reorder(shooting_team, prop)) |>
   ggplot(aes(y = shooting_team, x = prop)) +
   geom_col(aes(fill = shooting_team)) +
+  scale_fill_manual(values = color_vector) +
   theme_bw() +
   geom_label(aes(label = prop), size = 2.5) +
   labs(
-    title = "Vegas Banking Points in the Playoffs Too",
+    title = "Shooting Percentages in Playoffs",
     x = "Proportion",
     y = "Teams",
     fill = "Teams",
@@ -141,100 +176,91 @@ wnba_shots2 |>
 
 
 ```{r}
-playoff1 <- wnba_shots2 |> 
-  select(game_type, desc, made_shot, shooter, shooter_last, shooter_first) |> 
+playoff1 <- wnba_shots |> 
+  select(game_type, desc, made_shot, shooter) |> 
   filter(game_type == 3) |> 
-  group_by(shooter, shooter_last) |> 
+  group_by(shooter) |> 
   summarise(freq = n(),
     total_shots_made = sum(made_shot)) |> 
-  mutate(prop = round(total_shots_made / freq, 3)) |> 
-  filter(freq >= 19, prop > 0.5) |> 
-  arrange(desc(prop))
+  mutate(prop = round(total_shots_made / freq, 3))
   
 
 playoff1 |> 
+  filter(freq >= 18, prop > 0.5) |> 
+  arrange(desc(prop)) |> 
+  head(n = 10) |> 
   ggplot(aes(y = reorder(shooter, prop), x = prop)) +
   geom_col(fill = "orange1") +
   theme_bw() +
   geom_label(aes(label = prop), size = 2.5, label.size = 0.5) +
-  # geom_text(aes(label = shooter_last), size = 3, hjust = 2, check_overlap = TRUE) +
   labs(
-    title = "Myisha Hines-Allen and Teaira McCowan Clutch Up in Playoffs",
+    title = "Olivia Nelson-Ododa and Crystal Dangerfield Clutch Up",
     x = "Proportion",
     y = "Player",
-    caption = "Data Courtesy of Wehoop"
+    caption = "Minimum of 19 shot attempts
+    
+    Data Courtesy of Wehoop"
   ) +
-  theme(plot.title = element_text(hjust = 1, face= "bold"))
-  
+  theme(plot.title = element_text(hjust = 0.5, face= "bold"))
 
-summary(playoff1$freq)
+
 ```
 
 
 
 ```{r}
-playoff2 <- wnba_shots2 |> 
-  select(game_type, desc, made_shot, shooter, shooter_last, shooter_first) |> 
-  filter(game_type == 3) |> 
-  group_by(shooter, shooter_last) |> 
-  summarise(freq = n(),
-    total_shots_made = sum(made_shot)) |> 
-  mutate(prop = round(total_shots_made / freq, 3)) |> 
-  filter(freq >= 8, prop < 0.3) |> 
-  arrange(desc(prop))
-
-playoff2 |> 
+playoff1 |> 
+  filter(freq >= 18, prop < 0.4) |> 
+  arrange(prop) |> 
+  head(n = 10) |> 
   ggplot(aes(y = reorder(shooter, -prop), x = prop)) +
   geom_col(fill = "orange") +
   geom_label(aes(label = prop), size = 2.5, label.size = 0.5) +
-  # geom_text(aes(label = shooter_last), size = 3, hjust = 2, check_overlap = TRUE) +
+  theme_bw() +
   labs(
-    title = "Marine Johannes and Cheyenne Parker Don't Rise to the Occasion",
+    title = "Cayla George and Marine Johannes Don't Rise to the Occasion",
     x = "Proportion",
     y = "Player",
-    caption = "Data Courtesy of Wehoop"
+    caption = "Minimum of 20 shot attempts
+    
+    Data Courtesy of Wehoop"
   )  +
-  theme(plot.title = element_text(hjust = 1, face= "bold"))
-  
+  theme(plot.title = element_text(hjust = 0.5, face= "bold"))
 
-summary(playoff2$freq)
+
 ```
 
 
 
 ```{r}
-wnba_shots3 <- wnba_shots |> 
-  filter(shooting_team %in% c("Seattle", "Chicago", "Washington", "Atlanta", "Minnesota", "Indiana", "Los Angeles", "Connecticut", "Dallas", "Phoenix", "New York", "Las Vegas")) |> 
-  mutate(made_shot = ifelse(made_shot == "TRUE", 1, 0))
+wnba_shots <- wnba_shots |> 
+  mutate(time_group = game_seconds_remaining %/% 30)
 
-wnba_shots3 <- wnba_shots3 |> 
-  mutate(shooter_first = word(desc, 1),
-         shooter_last = word(desc, 2), 
-         shooter = paste(shooter_first, shooter_last))
-
-wnba_shots3 <- wnba_shots3 |> 
-  mutate(time_group = game_seconds_remaining %/% 24)
+# wnba_shots2 <- wnba_shots2[!grepl('Free Throw', wnba_shots$shot_type),]
 ```
 
 
 
 ```{r}
 ## Graph 1
-wnba_shots3 |> 
+wnba_shots |>
   filter(game_type == 2) |> 
+  select(time_group, shooting_team, made_shot) |> 
   group_by(time_group, shooting_team) |> 
   summarise(num_shots = n(), 
             total_shots_made = sum(made_shot)) |> 
-  mutate(prop = round(total_shots_made / num_shots, 3)) |> 
+  mutate(prop = round(total_shots_made / num_shots, 3)) |>
   ggplot(aes(x = time_group, y = prop, color = shooting_team)) +
   geom_line(alpha = 0.4) +
-  geom_smooth(alpha = 0.1, se = FALSE) +
-  facet_wrap(vars(shooting_team)) +
+  geom_smooth(alpha = 0.2, se = FALSE) +
+  geom_hline(yintercept = 0.5, color = "red", size = 1, linetype = "dashed") +
+  facet_wrap(~ shooting_team) +
   scale_x_reverse() +
+  theme_bw() +
   labs(
     title = "Time Series of Goal Percentage in a Game (Regular Season)",
-    x = "Percentage of Game Remaining",
-    y = "Goals Made Percentage",
+    x = "Game Time Remaining",
+    y = "Shooting Percentage",
     caption = "Data Courtesy of Wehoop"
   ) +
   theme(
@@ -242,8 +268,11 @@ wnba_shots3 |>
     plot.title = element_text(hjust = 0.5, face= "bold")
   )
 
+
+
+
 ## Graph 2
-wnba_shots3 |> 
+wnba_shots |> 
   filter(game_type == 3) |> 
   group_by(time_group, shooting_team) |> 
   summarise(num_shots = n(), 
@@ -251,13 +280,15 @@ wnba_shots3 |>
   mutate(prop = round(total_shots_made / num_shots, 3)) |> 
   ggplot(aes(x = time_group, y = prop, color = shooting_team)) +
   geom_line(alpha = 0.4) +
-  geom_smooth(alpha = 0.1, se = FALSE) +
+  geom_smooth(alpha = 0.2, se = FALSE) +
+  geom_hline(yintercept = 0.5, color = "red", size = 1, linetype = "dashed") +
   facet_wrap(vars(shooting_team)) +
   scale_x_reverse() +
+  theme_bw() +
   labs(
     title = "Time Series of Goal Percentage in a Game (Playoffs)",
-    x = "Percentage of Game Remaining", 
-    y = "Goals Made Percentage",
+    x = "Game Time Remaining", 
+    y = "Shooting Percentage",
     caption = "Data Courtesy of Wehoop"
   ) +
   theme(
@@ -265,19 +296,23 @@ wnba_shots3 |>
     plot.title = element_text(hjust = 0.5, face= "bold")
   )
 
+
+
+
 # Graph 3
-wnba_shots3 |> 
+wnba_shots |> 
   filter(game_type == 2) |> 
   group_by(time_group, shooting_team) |> 
   summarise(num_shots = n()) |> 
   ggplot(aes(x = time_group, y = num_shots, color = shooting_team)) +
   geom_line(alpha = 0.4) +
-  geom_smooth(alpha = 0.1, se = FALSE) +
+  geom_smooth(alpha = 0.2, se = FALSE) +
   facet_wrap(vars(shooting_team)) +
   scale_x_reverse() +
+  theme_bw() +
   labs(
     title = "Time Series of Shots in a Game (Regular Season)",
-    x = "Percentage of Game Remaining", 
+    x = "Game Time Remaining", 
     y = "Number of Shots",
     caption = "Data Courtesy of Wehoop"
   ) +
@@ -286,19 +321,23 @@ wnba_shots3 |>
     plot.title = element_text(hjust = 0.5, face= "bold")
   )
 
+
+
+
 # Graph 4
-wnba_shots3 |> 
+wnba_shots |> 
   filter(game_type == 3) |> 
   group_by(time_group, shooting_team) |> 
   summarise(num_shots = n()) |> 
   ggplot(aes(x = time_group, y = num_shots, color = shooting_team)) +
   geom_line(alpha = 0.4) +
-  geom_smooth(alpha = 0.1, se = FALSE) +
+  geom_smooth(alpha = 0.2, se = FALSE) +
   facet_wrap(vars(shooting_team)) +
   scale_x_reverse() +
+  theme_bw() +
   labs(
     title = "Time Series of Shots in a Game (Playoffs)",
-    x = "Percentage of Game Remaining", 
+    x = "Game Time Remaining", 
     y = "Number of Shots",
     caption = "Data Courtesy of Wehoop"
   ) +
@@ -316,11 +355,14 @@ wnba_shots3 |>
 
 
 ```{r}
+# Cluster 1
+
 set.seed(10)
 
+
 # creating new dataset
-cluster_playoff <- wnba_shots2 |> 
-  select(game_type, desc, made_shot, shooter, shooter_last, shooter_first) |> 
+cluster_playoff <- wnba_shots |> 
+  select(game_type, desc, made_shot, shooter) |> 
   filter(game_type == 3) |> 
   group_by(shooter) |> 
   summarise(freq = n(),
@@ -336,7 +378,7 @@ cluster_playoff <- cluster_playoff |>
 
 std_kmeans <- cluster_playoff |> 
   select(std_shot_made, std_shots) |> 
-  kmeans(algorithm = "Lloyd", centers = 4, nstart = 30)
+  kmeans(algorithm = "Lloyd", centers = 3, nstart = 30)
 
 cluster_playoff |>
   mutate(
@@ -348,6 +390,7 @@ cluster_playoff |>
   ggthemes::scale_color_colorblind() +
   theme(legend.position = "bottom") +
   coord_fixed() +
+  theme_bw() +
   labs(
     x = "Total Shots Made",
     y = "Shots Attempted",
@@ -360,17 +403,15 @@ cluster_playoff |>
     plot.title = element_text(hjust = 0.5, face= "bold")
   )
 
-```
 
 
 
-```{r}
-# Clustering
-set.seed(10)
+
+
 
 # creating new dataset
-cluster_playoff2 <- wnba_shots2 |> 
-  select(game_type, desc, made_shot, shot_value, shooter, shooter_last, shooter_first) |> 
+cluster_playoff2 <- wnba_shots |> 
+  select(game_type, desc, made_shot, shot_value, shooter) |> 
   filter(game_type == 3) |> 
   group_by(shooter) |> 
   summarise(freq = n(),
@@ -381,7 +422,9 @@ cluster_playoff2 <- wnba_shots2 |>
   mutate(prop = round(total_shots_made / freq, 3))
   
 
-## Cluster 1
+
+
+## Cluster 2
 # normalizing the data
 cluster_playoff2 <- cluster_playoff2 |> 
   mutate(
@@ -403,6 +446,7 @@ cluster_playoff2 |>
   ggthemes::scale_color_colorblind() +
   theme(legend.position = "bottom") +
   coord_fixed() +
+  theme_bw()
   labs(
     x = "Total Points",
     y = "Shots Attempted",
@@ -422,7 +466,7 @@ cluster_playoff2 |>
 
 
 
-## Cluster 2
+## Cluster 3
   
 cluster_playoff2 <- cluster_playoff2 |> 
   mutate(
@@ -432,7 +476,7 @@ cluster_playoff2 <- cluster_playoff2 |>
 
 std_kmeans2 <- cluster_playoff2 |> 
   select(std_point_perc, std_prop) |> 
-  kmeans(algorithm = "Lloyd", centers = 4, nstart = 30)
+  kmeans(algorithm = "Lloyd", centers = 3, nstart = 30)
 
 cluster_playoff2 |>
   mutate(
@@ -444,6 +488,7 @@ cluster_playoff2 |>
   ggthemes::scale_color_colorblind() +
   theme(legend.position = "bottom") +
   coord_fixed() +
+  theme_bw() +
   labs(
     x = "Shooting Precentage",
     y = "Points Percentage",
@@ -456,6 +501,7 @@ cluster_playoff2 |>
     plot.title = element_text(hjust = 0.5, face= "bold")
   )
 ```
+
 
 
 
