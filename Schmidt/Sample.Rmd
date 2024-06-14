@@ -8,8 +8,8 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(ggplot2)
 theme_set(theme_bw())
 wnba_shots <- read_csv("https://raw.githubusercontent.com/36-SURE/36-SURE.github.io/main/data/wnba_shots.csv")
 
@@ -35,21 +35,6 @@ wnba_shots <- wnba_shots |>
 
 #View(wnba_shots)
 ```
-
-
-
-```{r, include=FALSE}
-# Shooting in the last 2 minutes of the Second Quarter
-wnba_shots |>
-  filter(qtr == 2 & quarter_seconds_remaining <= 120.0) |>
-  arrange(quarter_seconds_remaining)
-
-# Shooting in the last 2 minutes of the Fourth Quarter
-wnba_shots |>
-  filter(qtr == 4 & quarter_seconds_remaining <= 120.0) |>
-  arrange(quarter_seconds_remaining)
-```
-
 
 ```{r, include=FALSE}
 # Shots taken in the last 30 seconds of the fourth quarter Where the score differential was less than 6 after the shot was taken
@@ -252,7 +237,7 @@ of occurrences.
 
 # Overarching Question 2 - How Do Each Of The Teams Perform In Close Home Compared To Close Away Games?
 
-## Number of Close Home And Away Games (6 points or less with 30 seconds left) Per Team
+## Number of Close Home And Away Games (6 points or less with 30 seconds left) Per Team - Need ShinyApp 
 
 ```{r}
 win_losses2 <- close_games_observing |>
@@ -261,8 +246,9 @@ win_losses2 <- close_games_observing |>
                names_to = "home_or_away_team") |> 
   mutate(home_or_away_team = ifelse(home_or_away_team == "home_team_name", "Home", "Away"))
          
-
-ggplot(win_losses2, aes(x = fct_rev(fct_infreq(teams)), fill = home_or_away_team)) +
+win_losses2 |>
+  filter(teams == "Atlanta" | teams == "Washington") |> 
+ggplot(aes(x = fct_rev(fct_infreq(teams)), fill = home_or_away_team)) +
   geom_bar(color = "black") +
   coord_flip() + 
   scale_fill_manual(values = c("white", "#E77500")) +
@@ -274,7 +260,7 @@ ggplot(win_losses2, aes(x = fct_rev(fct_infreq(teams)), fill = home_or_away_team
   theme_gray()
 ```
 
-## Each Team's Number of Wins And Losses In Close Home vs. Away Games
+## Each Team's Number of Wins And Losses In Close Home vs. Away Games - Need To Use Same Shiny App As Above
 
 ```{r, include=FALSE}
 # Adds Both Away And Home Win vs. losses
@@ -307,7 +293,8 @@ win_loss_per_team <- full_join(away_win_losses, home_win_loss) |>
 
 ```{r}
 # Home vs. Away Outcomes
-team_win_vs_losses <- ggplot(win_loss_per_team, aes(x = home_or_away, y = occurences, fill = result)) +
+team_win_vs_losses <- win_loss_per_team |> 
+  ggplot(aes(x = home_or_away, y = occurences, fill = result)) +
   geom_bar(position = position_fill(), stat = "identity") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_fill_manual(values = c("firebrick", "goldenrod1", "green4")) +
@@ -328,14 +315,16 @@ team_win_vs_losses
 home_game_results <- close_games_observing |> 
   group_by(home_team_name, home_team_outcome, Home_Result) |>
   summarise(num_times_home_per_team = n()) |> 
-  rename(outcome = home_team_outcome) 
+  rename(outcome = home_team_outcome) |> 
+  ungroup()
 home_game_results
 
 # Away Game Results By Team
 away_game_results <- close_games_observing |> 
   group_by(away_team_name, away_team_outcome, Away_Result) |> 
   summarise(times_occured_away_per_team = n()) |> 
-  rename(outcome = away_team_outcome) 
+  rename(outcome = away_team_outcome) |> 
+  ungroup()
 
 away_game_results
 ```
@@ -377,10 +366,11 @@ Team_home_outcomes + Team_away_outcomes +
   plot_layout(guides = "collect", nrow = 2) 
 ```
 
-## Graph For Number of Shots Taken By Each of The WNBA Teams In Final 30 Seconds of Close Games
+## Graph For Number of Shots Taken By Each of The WNBA Teams In Final 30 Seconds of Close Games - The Filter is to be changed by shiny app
 
 ```{r}
 all_close_game_shots |> 
+  filter(shooting_team == "Atlanta" | shooting_team == "Washington") |> 
   ggplot(aes(x = fct_rev(fct_infreq(shooting_team)), fill = made_shot))  +
   geom_bar(color = "black") +
   theme(axis.text.x=element_text(angle=45, hjust=0.9)) +
@@ -395,10 +385,12 @@ all_close_game_shots |>
 ```
 
 
-## Each Team's Shooting Percentage (Home and Away)
+## Each Team's Shooting Percentage (Home and Away) - The Filter Is Changed By Same Shiny App As Above
 
 ```{r}
-ggplot(all_close_game_shots, aes(x = Shooting_Team_Home_Away)) +
+all_close_game_shots |> 
+  filter(shooting_team == "Atlanta" | shooting_team == "Washington") |> 
+ggplot(aes(x = Shooting_Team_Home_Away)) +
   geom_bar(aes(fill = made_shot), color = "black", position = "fill") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_fill_manual(values = c("white", "#E77500")) +
@@ -416,6 +408,21 @@ ggplot(all_close_game_shots, aes(x = Shooting_Team_Home_Away)) +
 - Make Graph For Final Possession Shooting Percentage per team
 - Make Graph For Each Quarter's shooting percentage per team
 - Make Graph For Start and end of half shooting percentage per team
+
+
+
+```{r, include=FALSE}
+# Shooting in the last 2 minutes of the Second Quarter
+wnba_shots |>
+  filter(qtr == 2 & quarter_seconds_remaining <= 120.0) |>
+  arrange(quarter_seconds_remaining)
+
+# Shooting in the last 2 minutes of the Fourth Quarter
+wnba_shots |>
+  filter(qtr == 4 & quarter_seconds_remaining <= 120.0) |>
+  arrange(quarter_seconds_remaining)
+```
+
 
 ## Teams Who Shot Best In Close Games (30 Seconds)
 
