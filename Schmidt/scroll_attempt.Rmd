@@ -236,7 +236,7 @@ win_loss_per_team <- full_join(away_win_losses, home_win_loss) |>
 #win_loss_per_team
 
   inputPanel(
-    checkboxGroupInput("teams_check1", "Select Teams For Graph 2:",
+    checkboxGroupInput("teams_check1", "Select Teams For Graph 1:",
                        choices = c("All", unique(as.character(win_loss_per_team$team))),                         
                        selected = "All")
   )
@@ -558,26 +558,23 @@ Row
 -------------------------------------
 
 ```{r}
-
 renderPlot({
-    filtered_teams4 <- if("All" %in% input$teams_check2) {
+    filtered_teams7 <- if("All" %in% input$teams_check7) {
       all_close_game_shots
     } else {
       all_close_game_shots |>
-        filter(shooting_team %in% input$teams_check2)
+        filter(shooting_team %in% input$teams_check7)
     }
 
-ggplot(filtered_teams4, aes(x = fct_rev(fct_infreq(shooting_team)), fill = made_shot))  +
-  geom_bar(color = "black") +
-  theme(axis.text.x=element_text(angle=45, hjust=0.9)) +
+ggplot(filtered_teams7, aes(x = Shooting_Team_Home_Away)) +
+  geom_bar(aes(fill = made_shot), color = "black", position = "fill") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_fill_manual(values = c("white", "#E77500")) +
-  coord_flip() +
-  labs(title = "Number of Shots Made vs. Missed in Close Games Per WNBA Team",
-       x = "WNBA Team",
-       y = "Number of Shots",
-       fill = "Made or Missed"
-       )
-
+  labs(title = "Each Team's Shotting Percentage For Home vs. Away Close Games",
+       x = "Home vs. Away",
+       fill = "Result") +
+  theme_gray() +
+  facet_wrap(~shooting_team)
  })
 
  

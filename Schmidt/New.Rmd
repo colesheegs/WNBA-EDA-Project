@@ -1,5 +1,7 @@
 ---
-title: "WNBA"
+title: "WNBA 2"
+author: "Belle Schmidt"
+date: "2024-06-14"
 runtime: shiny
 output: 
   flexdashboard::flex_dashboard:

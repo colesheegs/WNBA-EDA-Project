@@ -245,9 +245,9 @@ win_losses2 <- close_games_observing |>
                values_to = "teams",
                names_to = "home_or_away_team") |> 
   mutate(home_or_away_team = ifelse(home_or_away_team == "home_team_name", "Home", "Away"))
-         
-win_losses2 |>
-  filter(teams == "Atlanta" | teams == "Washington") |> 
+
+win_losses2 |> 
+  filter(teams == "Atlanta Dream")|> 
 ggplot(aes(x = fct_rev(fct_infreq(teams)), fill = home_or_away_team)) +
   geom_bar(color = "black") +
   coord_flip() + 
@@ -389,7 +389,6 @@ all_close_game_shots |>
 
 ```{r}
 all_close_game_shots |> 
-  filter(shooting_team == "Atlanta" | shooting_team == "Washington") |> 
 ggplot(aes(x = Shooting_Team_Home_Away)) +
   geom_bar(aes(fill = made_shot), color = "black", position = "fill") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +

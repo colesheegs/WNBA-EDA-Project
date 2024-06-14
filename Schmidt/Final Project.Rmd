@@ -1,7 +1,5 @@
 ---
 title: "WNBA"
-output: html_document
-date: "2024-06-14"
 runtime: shiny
 output: 
   flexdashboard::flex_dashboard:
@@ -10,6 +8,7 @@ output:
       version: 4
       bootswatch: sandstone
 ---
+
 About
 ==========================
 
@@ -193,7 +192,7 @@ close_games_observing <- left_join(close_games, final_score) |>
          home_team_outcome =factor(home_team_outcome, levels = c("Lost - Lost Lead", "Lost - Deficit Increased", "Lost - No Comeback", "Lost - Deficit Decreased", "Lost - From Tie", "Tied - Lost Lead", "Tied - No Change", "Tied - Comeback", "Won - Lead Decreased", "Won - Kept Same Lead", "Won - Extended Lead", "Won - From Tie", "Won - Took Lead From Loss")))
 
 
-win_loss_color_vector <- c("Lost - Lost Lead" = "firebrick4", "Lost - Deficit Increased" = "firebrick", "Lost - No Comeback" = "firebrick3", "Lost - Deficit Decreased" = "firebrick2", "Lost - From Tie" = "firebrick1", "Tied - Lost Lead" = "darkorange1", "Tied - No Change" = "goldenrod1", "Tied - Comeback" = "gold", "Won - Lead Decreased" = "lightgreen", "Won - Kept Same Lead" = "green1", "Won - Extended Lead" = "green3", "Won - From Tie" = "green4", "Won - Took Lead From Loss" = "darkgreen")
+win_loss_type_color_vector <- c("Lost - Lost Lead" = "firebrick4", "Lost - Deficit Increased" = "firebrick", "Lost - No Comeback" = "firebrick3", "Lost - Deficit Decreased" = "firebrick2", "Lost - From Tie" = "firebrick1", "Tied - Lost Lead" = "darkorange1", "Tied - No Change" = "goldenrod1", "Tied - Comeback" = "gold", "Won - Lead Decreased" = "lightgreen", "Won - Kept Same Lead" = "green1", "Won - Extended Lead" = "green3", "Won - From Tie" = "green4", "Won - Took Lead From Loss" = "darkgreen")
 
 ```
 
@@ -230,10 +229,18 @@ win_loss_per_team <- full_join(away_win_losses, home_win_loss) |>
   pivot_longer(num_times_home:num_times_away,
                values_to = "occurences",
                names_to = "home_or_away") |> 
-  mutate(home_or_away = ifelse(home_or_away == "num_times_home", "Home", "Away")) |> 
-  ungroup()
+  mutate(home_or_away = ifelse(home_or_away == "num_times_home", "Home", "Away"),
+         result = factor(result, levels = c("Loss", "Tie", "Win"))) |> 
+  ungroup() 
 
-#win_loss_per_team
+# win_loss_per_team
+
+# Home Game Color Assignment 
+win_loss_color_vector <- c("firebrick", "goldenrod1", "green4")
+
+names(win_loss_color_vector) <- levels(win_loss_per_team$result)
+
+custom_color <- scale_fill_manual(name = "Result", values = win_loss_color_vector)
 
   
   inputPanel(
@@ -244,12 +251,12 @@ win_loss_per_team <- full_join(away_win_losses, home_win_loss) |>
                          "Dallas Wings" = "Dallas Wings",
                          "Indiana Fever" = "Indiana Fever",
                          "Las Vegas Aces" = "Las Vegas Aces",
-                         "Los Angeles Spark" = "Los Angeles Saprk",
+                         "Los Angeles Spark" = "Los Angeles Spark",
                          "Minnesota Lynx" = "Minnesota Lynx",
+                         "New York Liberty" = "New York Liberty",
                          "Phoenix Mercury" = "Phoenix Mercury",
                          "Seattle Storm" = "Seattle Storm",
-                         "Washington Mystics" = "Washington Mystics",
-                         "New York Liberty" = "New York Liberty"))
+                         "Washington Mystics" = "Washington Mystics"))
 )
 ```
 
@@ -273,7 +280,7 @@ win_losses <- close_games_observing |>
 ggplot(win_losses, aes(x = home_or_away_result, fill = win_or_loss)) +
   geom_bar(position = position_fill()) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  scale_fill_manual(values = c("firebrick", "goldenrod1", "green4")) +
+  custom_color +
   labs(title = "Outcomes For Home And Away Teams In Close Games",
        x = "Home vs. Away",
        fill = "Result") 
@@ -284,13 +291,12 @@ Row
 
 ```{r, echo=FALSE}
 renderPlot({
-  
 win_loss_per_team |> 
   filter(team == input$teams5) |>
   ggplot(aes(x = home_or_away, y = occurences, fill = result)) +
   geom_bar(position = position_fill(), stat = "identity") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  scale_fill_manual(values = c("firebrick", "goldenrod1", "green4")) +
+  custom_color +
   labs(title = "Outcomes For Home And Away Teams In Close Games",
        x = "Home vs. Away",
        fill = "Result") +
@@ -301,15 +307,18 @@ win_loss_per_team |>
 Row
 -------------------------------------
 ```{r, echo=FALSE}
-
+win_losses2 <- close_games_observing |>
+  pivot_longer(home_team_name:away_team_name,
+               values_to = "teams",
+               names_to = "home_or_away_team") |> 
+  mutate(home_or_away_team = ifelse(home_or_away_team == "home_team_name", "Home", "Away"))
 
 renderPlot({
 
   win_losses2 |> 
-    filter(team == input$teams5) +
-    ggplot(filtered_teams, aes(x = fct_rev(fct_infreq(teams)), fill = home_or_away_team)) +
+    filter(teams == input$teams5) |> 
+    ggplot(aes(x = home_or_away_team, fill = home_or_away_team)) +
   geom_bar(color = "black") +
-  coord_flip() + 
   scale_fill_manual(values = c("white", "#E77500")) +
   theme(panel.background = element_rect(fill = "gray80"), panel.grid.minor = element_blank()) +
   labs(title = "Number of Close Home And Away Games Per Team", 
@@ -424,7 +433,7 @@ home_outcomes <- ggplot(possible_outcomes, aes(x = Win_Loss, y = num_times_home,
   labs(title = "Occurences of Each Outcome Type For Home Teams",
        y = "Occurences",
        fill = "Outcome") +
-  scale_fill_manual(values = win_loss_color_vector) +
+  scale_fill_manual(values = win_loss_type_color_vector) +
   theme(axis.title.x = element_blank()) 
 
 
@@ -435,7 +444,7 @@ away_outcomes <- ggplot(possible_outcomes, aes(x = Win_Loss, y = num_times_away,
   labs(title = "Occurences of Each Outcome Type For Away Teams",
        y = "Occurences",
        fill = "Outcome") +
-  scale_fill_manual(values = win_loss_color_vector)+
+  scale_fill_manual(values = win_loss_type_color_vector)+
   theme(axis.title.x = element_blank()) 
 
 
@@ -464,7 +473,7 @@ renderPlot({
       labs(title = "Occurences of Each Outcome When The Home Team",
            y = "Occurences",
            fill = "Outcome") +
-      scale_fill_manual(values = win_loss_color_vector) +
+      scale_fill_manual(values = win_loss_type_color_vector) +
       theme(axis.title.x = element_blank()) 
 
     # Plot for away outcomes
@@ -480,14 +489,13 @@ renderPlot({
       labs(title = "Occurences of Each Outcome Type When The Away Team",
            y = "Occurences",
            fill = "Outcome") +
-      scale_fill_manual(values = win_loss_color_vector) +
+      scale_fill_manual(values = win_loss_type_color_vector) +
       theme(axis.title.x = element_blank()) 
 
     Team_home_outcomes + Team_away_outcomes +
   plot_layout(guides = "collect", nrow = 2)
 })
 ```
-
 
 Shooting Percentage in Close Home Games vs Close Away Games
 =============================================================
@@ -497,11 +505,21 @@ Inputs {.sidebar}
 -------------------------
 ```{r, echo=FALSE}
 
- inputPanel(
-    checkboxGroupInput("teams_check2", "Select Teams:",
-                       choices = c("All", unique(as.character(all_close_game_shots$shooting_team))),                         
-                       selected = "All")
-  )
+inputPanel(
+ selectInput("teams6", label = "Home Team Graph:", 
+             choices = c("Atlanta Dream" = "Atlanta Dream",
+                         "Chicago Sky" = "Chicago Sky",
+                         "Connecticut Sun" = "Connecticut Sun",
+                         "Dallas Wings" = "Dallas Wings",
+                         "Indiana Fever" = "Indiana Fever",
+                         "Las Vegas Aces" = "Las Vegas Aces",
+                         "Los Angeles Spark" = "Los Angeles Saprk",
+                         "Minnesota Lynx" = "Minnesota Lynx",
+                         "Phoenix Mercury" = "Phoenix Mercury",
+                         "Seattle Storm" = "Seattle Storm",
+                         "Washington Mystics" = "Washington Mystics",
+                         "New York Liberty" = "New York Liberty"))
+)
 ```
 
 
@@ -524,21 +542,16 @@ Row
 
 ```{r}
 renderPlot({
-    filtered_teams4 <- if("All" %in% input$teams_check2) {
-      all_close_game_shots
-    } else {
-      all_close_game_shots |>
-        filter(shooting_team %in% input$teams_check2)
-    }
-
-ggplot(filtered_teams4, aes(x = Shooting_Team_Home_Away)) +
-  geom_bar(aes(fill = made_shot), color = "black", position = "fill") +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  scale_fill_manual(values = c("white", "#E77500")) +
-  labs(title = "Each Team's Shotting Percentage For Home vs. Away Close Games",
+all_close_game_shots |> 
+    filter(shooting_team == input$teams6) |>
+    ggplot(aes(x = Shooting_Team_Home_Away)) +
+    geom_bar(aes(fill = made_shot), color = "black", position = "fill") +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    scale_fill_manual(values = c("white", "#E77500")) +
+    labs(title = "Each Team's Shotting Percentage For Home vs. Away Close Games",
        x = "Home vs. Away",
        fill = "Result") +
-  theme_gray() +
+  theme(panel.background = element_rect(fill = "gray80"), panel.grid.minor = element_blank()) +
   facet_wrap(~shooting_team)
  })
 
@@ -550,18 +563,12 @@ Row
 ```{r}
 
 renderPlot({
-    filtered_teams4 <- if("All" %in% input$teams_check2) {
-      all_close_game_shots
-    } else {
-      all_close_game_shots |>
-        filter(shooting_team %in% input$teams_check2)
-    }
-
-ggplot(filtered_teams4, aes(x = fct_rev(fct_infreq(shooting_team)), fill = made_shot))  +
+all_close_game_shots |> 
+    filter(shooting_team == input$teams6) |>
+ggplot(aes(x = made_shot, fill = made_shot))  +
   geom_bar(color = "black") +
-  theme(axis.text.x=element_text(angle=45, hjust=0.9)) +
   scale_fill_manual(values = c("white", "#E77500")) +
-  coord_flip() +
+    theme(panel.background = element_rect(fill = "gray80"), panel.grid.minor = element_blank()) +
   labs(title = "Number of Shots Made vs. Missed in Close Games Per WNBA Team",
        x = "WNBA Team",
        y = "Number of Shots",
@@ -572,3 +579,83 @@ ggplot(filtered_teams4, aes(x = fct_rev(fct_infreq(shooting_team)), fill = made_
 
  
 ```
+
+Comparing Teams To Each Other
+=============================================================
+
+Inputs {.sidebar}
+-------------------------
+
+```{r, echo=FALSE}
+win_losses2 <- close_games_observing |>
+  pivot_longer(home_team_name:away_team_name,
+               values_to = "teams",
+               names_to = "home_or_away_team") |> 
+  mutate(home_or_away_team = ifelse(home_or_away_team == "home_team_name", "Home", "Away"))
+
+ inputPanel(
+    checkboxGroupInput("teams_check", "Select Teams For Wins vs. Losses:",
+                       choices = c("All", unique(as.character(win_losses2$teams))),                         
+                       selected = "All")
+  )
+```
+
+```{r, echo=FALSE}
+
+ inputPanel(
+    checkboxGroupInput("teams_check7", "Select Teams For Shooting Percentage:",
+                       choices = c("All", unique(as.character(all_close_game_shots$shooting_team))),                         
+                       selected = "All")
+  )
+```
+
+Row
+-------------------------------------
+```{r, echo=FALSE}
+
+
+renderPlot({
+    filtered_teams1 <- if("All" %in% input$teams_check) {
+      win_loss_per_team
+    } else {
+      win_loss_per_team |>
+        filter(team %in% input$teams_check)
+    }
+
+  ggplot(filtered_teams1, aes(x = home_or_away, y = occurences, fill = result)) +
+  geom_bar(position = position_fill(), stat = "identity") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_fill_manual(values = c("firebrick", "goldenrod1", "green4")) +
+  labs(title = "Outcomes For Home And Away Teams In Close Games",
+       x = "Home vs. Away",
+       fill = "Result") +
+  facet_wrap(~team)
+ })
+```
+
+Row
+-------------------------------------
+
+```{r, echo=FALSE}
+renderPlot({
+    filtered_teams7 <- if("All" %in% input$teams_check7) {
+      all_close_game_shots
+    } else {
+      all_close_game_shots |>
+        filter(shooting_team %in% input$teams_check7)
+    }
+
+ggplot(filtered_teams7, aes(x = Shooting_Team_Home_Away)) +
+  geom_bar(aes(fill = made_shot), color = "black", position = "fill") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_fill_manual(values = c("white", "#E77500")) +
+  labs(title = "Each Team's Shotting Percentage For Home vs. Away Close Games",
+       x = "Home vs. Away",
+       fill = "Result") +
+  theme_gray() +
+  facet_wrap(~shooting_team)
+ })
+
+ 
+```
+
