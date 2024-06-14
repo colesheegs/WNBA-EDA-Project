@@ -411,7 +411,11 @@ ggplot(all_close_game_shots, aes(x = Shooting_Team_Home_Away)) +
 
 # Overarching Question - How does time left in the game impact each team's performance?
 
-
+- Make Graph For Shooting Percentage in the last 30 seconds per team
+- Make Graph For Overall Shooting Percentage per team
+- Make Graph For Final Possession Shooting Percentage per team
+- Make Graph For Each Quarter's shooting percentage per team
+- Make Graph For Start and end of half shooting percentage per team
 
 ## Teams Who Shot Best In Close Games (30 Seconds)
 
@@ -443,12 +447,15 @@ shots_made_data1 <- end_of_game_shots |>
 ```
 
 
-shots_made_data1 \|\> ggplot(aes(x = fct_rev(fct_infreq(home)), fill =
+shots_made_data1 |>
+  ggplot(aes(x = fct_rev(fct_infreq(home)), fill =
 made_shot)) + geom_bar(color = "black") +
 theme(axis.text.x=element_text(angle=45, hjust=0.9)) +
 scale_fill_manual(values = c("#E77500", "white")) + coord_flip() +
 labs(title = "Shots Made vs. Missed Per WNBA Team", x = "WNBA Team", y =
 "Number of Shots" )
+
+
 
 ## Graph For Shooting Percentage of WNBA Teams In Final 30 Seconds of Close Games
 
@@ -535,10 +542,18 @@ df_long <- melt(close_game_appearances2)
 
 df_long
 
+# To Match Previous Styles
+ggplot(df_long, aes(x = team_name, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "stack", color = "black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9)) +
+  scale_fill_manual(values = c("white", "#E77500")) +
+  coord_flip()
+
+# New Style
 ggplot(df_long, aes(x = team_name, y = value, fill = variable)) +
   geom_bar(stat = "identity", position = "dodge", color = "black") +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9)) +
-  scale_fill_manual(values = c("white", "#E77500"))
+  scale_fill_manual(values = c("white", "#E77500")) 
 
 ```
 
