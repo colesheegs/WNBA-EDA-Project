@@ -126,7 +126,7 @@ wnba_shots |>
   geom_col(aes(fill = shooting_team)) +
   scale_fill_manual(values = color_vector) +
   theme_bw() +
-  geom_label(aes(label = prop), size = 2.5) +
+  geom_label(aes(label = prop), size = 4) +
   labs(
     title = "Shooting Percentage in Regular Season",
     x = "Proportion",
@@ -155,7 +155,7 @@ wnba_shots |>
   geom_col(aes(fill = shooting_team)) +
   scale_fill_manual(values = color_vector) +
   theme_bw() +
-  geom_label(aes(label = prop), size = 2.5) +
+  geom_label(aes(label = prop), size = 4) +
   labs(
     title = "Shooting Percentages in Playoffs",
     x = "Proportion",
@@ -192,7 +192,7 @@ playoff1 |>
   ggplot(aes(y = reorder(shooter, prop), x = prop)) +
   geom_col(fill = "#E77500") +
   theme_bw() +
-  geom_label(aes(label = prop), size = 2.5, label.size = 0.5) +
+  geom_label(aes(label = prop), size = 4, label.size = 0.5) +
   labs(
     title = "Olivia Nelson-Ododa and Crystal Dangerfield Clutch Up",
     x = "Proportion",
@@ -215,7 +215,7 @@ playoff1 |>
   head(n = 10) |> 
   ggplot(aes(y = reorder(shooter, -prop), x = prop)) +
   geom_col(fill = "#E77500") +
-  geom_label(aes(label = prop), size = 2.5, label.size = 0.5) +
+  geom_label(aes(label = prop), size = 4, label.size = 0.5) +
   theme_bw() +
   labs(
     title = "Cayla George and Marine Johannes Don't Rise to the Occasion",
@@ -256,6 +256,7 @@ wnba_shots |>
   geom_hline(yintercept = 0.5, color = "red", size = 1, linetype = "dashed") +
   facet_wrap(~ shooting_team) +
   scale_x_reverse() +
+  scale_y_continuous(breaks = c(0.25, 0.5, 0.75)) +
   theme_bw() +
   labs(
     title = "Time Series of Goal Percentage in a Game (Regular Season)",
@@ -284,6 +285,7 @@ wnba_shots |>
   geom_hline(yintercept = 0.5, color = "red", size = 1, linetype = "dashed") +
   facet_wrap(vars(shooting_team)) +
   scale_x_reverse() +
+  scale_y_continuous(breaks = c(0, 0.25, 0.5, 0.75, 1), limits = c(0, 1)) +
   theme_bw() +
   labs(
     title = "Time Series of Goal Percentage in a Game (Playoffs)",
@@ -435,8 +437,6 @@ wnba_shots |>
 
 
 
-
-
 ## Clustering
 
 
@@ -482,7 +482,7 @@ cluster_playoff |>
     x = "Total Shots Made",
     y = "Shots Attempted",
     color = "Player Clusters",
-    title = "Player Impact in Playoffs",
+    title = "Impact Players in Playoffs",
     caption = "Data Courtesy of Wehoop"
   ) +
    theme(
@@ -538,7 +538,7 @@ cluster_playoff2 |>
     x = "Total Points",
     y = "Shots Attempted",
     color = "Player Clusters",
-    title = "Player Impact in Playoffs",
+    title = "Impact Players in Playoffs",
     caption = "Data Courtesy of Wehoop"
   ) +
    theme(
@@ -580,7 +580,7 @@ cluster_playoff2 |>
     x = "Shooting Precentage",
     y = "Points Percentage",
     color = "Player Clusters",
-    title = "Player Impact in Playoffs",
+    title = "Impact Players in Playoffs",
     caption = "Data Courtesy of Wehoop"
   ) +
    theme(
