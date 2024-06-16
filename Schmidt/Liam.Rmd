@@ -1,40 +1,58 @@
 ---
-title: "WNBA"
-runtime: shiny
+title: "WNBA Shooting"
+author: "Liam Jennings"
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
     theme: 
-      bootswatch: united
+      version: 4
+      bootswatch: flatly
+runtime: shiny
 ---
 
-About
-==========================
+# About
 
-
-### **Additional Information:** 
+### **Additional Information:**
 
 **Authors:**
 
-Belle Schmidt, Liam Jennings, and Cole Siniawski
-
+Liam Jennings
 
 **Objective:**
 
-Although we outlined a few questions, our shiny app gives viewers the flexibility to look at many different questions regarding the WNBA. We hope that viewers may be able to learn more about the best teams and players and be able to find similarities and differences between the best and the worst.
-
+Although we outlined a few questions, our shiny app gives viewers the flexibility to look at many different questions regarding Spotify artists and their audio features. We hope that viewers may be able to learn more about their favorite genre and be able to find similarities and differences between their favorite and least favorite genres.
 
 **Tribulations and Victories of Data Acquisition and Wrangling:**
 
-
-
+After acquiring a Spotify ID and access token, we were able to view all Spotify data on an artist or song by using either it's name or it's unique ID. Originally, we had wanted to analyze at least five artists per genre in order to build a larger dataset and have more accurate analysis. However, our for loop was inconsistent with the large amount of data and had a difficult time finding the correct artists based of off their ID. Each time we ran the for loop, we would receive a dataset with a different number of artists. Due to this, we ended up reducing our sample size and looking at between three and five artists per genre. This was a significantly smaller number and allowed the for loop to work accurately, which enabled us to produce our final dataset.
 
 **Color Scheme:**
 
-
-
+Since our data was pulled from Spotify, we wanted our graphs to all have a color scheme related to Spotify. Unfortunately, for the graph on the Audio Features Part 2 page, too many colors were required for points that overlapped, making it impossible to find a solution where the colors were all different. As a result, we stuck with the scale_color_calc() color scale. On all the other graphs, we used shades of green, grey, and black (the Spotify colors) to represent the data. On the Audio Features Part 1 page we were able to use the same shade of green that is in the official Spotify logo.
 
 ### **Defining The Variables**
+
+-   **Danceability:** How suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, and beat strength.
+
+-   **Energy:** A measure of intensity and activity that ranges from 0.0 to 1.0.
+
+-   **Loudness:** The overall loudness of a track in decibels (dB).
+
+-   **Speechiness:** Detects the presence of spoken words in a track. The values range from 0.0 to 1.0.
+
+-   **Acousticness:** A measure of how acoustic a track is. Ranges from 0.0 to 1.0.
+
+-   **Instrumentalness:** Measures the amount of vocal content in a track. Ranges from 0.0 to 1.0 with 1.0 being more instrumental.
+
+-   **Liveness:** Detects the presence of an audience in the track, such as if the track was performed live or not. Ranges from 0.0 to 1.0.
+
+-   **Valence:** Describes the musical positiveness of a track. The more positive a track is, the closer the value is to 1.0.
+
+-   **Tempo:** The overall estimated tempo of a track in beats per minute (BPM).
+
+-   **Key:** Represents the musical key of a track (A, A#, B, C, C#, D, D#, E, F, F#, G, and G#).
+
+-   **Mode:** Indicates whether a track is in a major or minor key.
 
 ```{r global, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -332,439 +350,9 @@ nyl_court <- sportyR::geom_basketball("WNBA", display = "offense", rotation = 90
                                       ))
 ```
 
+# WNBA Team Shooting
 
-
-Wins and Losses in Close Home Games vs Close Away Games
-=============================================================
-
-### Overarching Question 2 - How Do Each Of The Teams Perform In Close Home Compared To Close Away Games? How does that compare to the league average?
-
-
-Inputs {.sidebar}
--------------------------
-
-```{r, echo=FALSE}
-  
-  inputPanel(
- selectInput("teams5", label = "Team:", 
-             choices = c("Atlanta Dream" = "Atlanta Dream",
-                         "Chicago Sky" = "Chicago Sky",
-                         "Connecticut Sun" = "Connecticut Sun",
-                         "Dallas Wings" = "Dallas Wings",
-                         "Indiana Fever" = "Indiana Fever",
-                         "Las Vegas Aces" = "Las Vegas Aces",
-                         "Los Angeles Spark" = "Los Angeles Spark",
-                         "Minnesota Lynx" = "Minnesota Lynx",
-                         "New York Liberty" = "New York Liberty",
-                         "Phoenix Mercury" = "Phoenix Mercury",
-                         "Seattle Storm" = "Seattle Storm",
-                         "Washington Mystics" = "Washington Mystics"))
-)
-```
-
-
-Row
--------------------------------------
-
-
-```{r, echo=FALSE}
-renderPlot({
-  # Home vs. Away Outcomes 
-ggplot(win_losses, aes(x = home_or_away_result, fill = win_or_loss)) +
-  geom_bar(position = position_fill()) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  custom_color +
-  labs(title = "Outcomes For Home And Away Teams In Close Games",
-       x = "Home vs. Away",
-       fill = "Result")
- }, height = 500, width = 605)
-
-```
-
-
-```{r, echo=FALSE}
-renderPlot({
-  
-win_loss_per_team |> 
-  filter(team == input$teams5) |>
-  ggplot(aes(x = home_or_away, y = occurences, fill = result)) +
-  geom_bar(position = position_fill(), stat = "identity") +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  custom_color +
-  labs(title = "Outcomes For Home And Away Teams In Close Games",
-       x = "Home vs. Away",
-       fill = "Result") 
- }, height = 500, width = 605)
-```
-
-Row
--------------------------------------
-```{r, echo=FALSE}
-
-renderPlot({
-
-  win_losses2 |> 
-    filter(teams == input$teams5) |> 
-    ggplot(aes(x = home_or_away_team, fill = home_or_away_team)) +
-  geom_bar(color = "black") +
-  scale_fill_manual(values = c("#161616", "#B54213")) +
-  theme(panel.background = element_rect(fill = "gray80"), panel.grid.minor = element_blank()) +
-  labs(title = "Number of Close Home And Away Games Per Team", 
-       y = "Number of Close Games",
-       x = "WNBA Team",
-       subtitle = "Close games is defined as a score differential of 6 or less in the last 30 seconds",
-       fill = "Home or Away") 
-  }, height = 520, width = 1210)
-
-```
-
-Outcome Types in Close Home Games vs Close Away Games
-============================================================= 
-
-Inputs {.sidebar}
--------------------------
-
-
-```{r, echo=FALSE}
-
-inputPanel(
- selectInput("teams1", label = "Home Team Graph:", 
-             choices = c("Atlanta Dream" = "Atlanta Dream",
-                         "Chicago Sky" = "Chicago Sky",
-                         "Connecticut Sun" = "Connecticut Sun",
-                         "Dallas Wings" = "Dallas Wings",
-                         "Indiana Fever" = "Indiana Fever",
-                         "Las Vegas Aces" = "Las Vegas Aces",
-                         "Los Angeles Spark" = "Los Angeles Spark",
-                         "Minnesota Lynx" = "Minnesota Lynx",
-                         "Phoenix Mercury" = "Phoenix Mercury",
-                         "Seattle Storm" = "Seattle Storm",
-                         "Washington Mystics" = "Washington Mystics",
-                         "New York Liberty" = "New York Liberty"))
-)
-
-```
-
-```{r, echo=FALSE}
-
-inputPanel(
- selectInput("teams2", label = "Away Team Graph:", 
-             choices = c("Atlanta Dream" = "Atlanta Dream",
-                         "Chicago Sky" = "Chicago Sky",
-                         "Connecticut Sun" = "Connecticut Sun",
-                         "Dallas Wings" = "Dallas Wings",
-                         "Indiana Fever" = "Indiana Fever",
-                         "Las Vegas Aces" = "Las Vegas Aces",
-                         "Los Angeles Spark" = "Los Angeles Spark",
-                         "Minnesota Lynx" = "Minnesota Lynx",
-                         "Phoenix Mercury" = "Phoenix Mercury",
-                         "Seattle Storm" = "Seattle Storm",
-                         "Washington Mystics" = "Washington Mystics",
-                         "New York Liberty" = "New York Liberty"))
-)
-```
-
-Row
--------------------------------------  
-
-```{r}
-# Home Outcome Types Occured Across Leagues In Close Games
-renderPlot({
-  home_outcomes <- ggplot(possible_outcomes, aes(x = Win_Loss, y = num_times_home, fill = outcome)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Occurences of Each Outcome Type For Home Teams",
-       y = "Occurences",
-       fill = "Outcome") +
-  scale_fill_manual(values = win_loss_type_color_vector) +
-  theme(axis.title.x = element_blank()) 
-
-
-
-# Away Outcome Types Occured Across Leagues In Close Games
-away_outcomes <- ggplot(possible_outcomes, aes(x = Win_Loss, y = num_times_away, fill = outcome)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Occurences of Each Outcome Type For Away Teams",
-       y = "Occurences",
-       fill = "Outcome") +
-  scale_fill_manual(values = win_loss_type_color_vector)+
-  theme(axis.title.x = element_blank()) 
-
-
-away_outcomes + home_outcomes +
-  plot_layout(guides = "collect", nrow = 2) +
-  labs("Occurences Of Each Outcome Type For Both Home and Away Teams In Close Games")
-}, height = 500, width = 605)
-```
-
-
-```{r, echo=FALSE}
-
-renderPlot({
-    # Plot for home outcomes
-    filtered_teams2 <- if("All" %in% input$teams1) {
-      home_game_results
-    } else {
-      home_game_results |>
-        filter(home_team_name %in% input$teams1)
-    }
-    
-    Team_home_outcomes <- ggplot(filtered_teams2, aes(x = Home_Result, y = num_times_home_per_team, fill = outcome)) +
-      geom_bar(stat = "identity", position = "dodge") +
-      labs(title = "Occurences of Each Outcome When The Home Team",
-           y = "Occurences",
-           fill = "Outcome") +
-      scale_fill_manual(values = win_loss_type_color_vector) +
-      theme(axis.title.x = element_blank()) 
-
-    # Plot for away outcomes
-    filtered_teams3 <- if("All" %in% input$teams2) {
-      away_game_results
-    } else {
-      away_game_results |>
-        filter(away_team_name %in% input$teams2)
-    }
-
-    Team_away_outcomes <- ggplot(filtered_teams3, aes(x = Away_Result, y = times_occured_away_per_team, fill = outcome)) +
-      geom_bar(stat = "identity", position = "dodge") +
-      labs(title = "Occurences of Each Outcome Type When The Away Team",
-           y = "Occurences",
-           fill = "Outcome") +
-      scale_fill_manual(values = win_loss_type_color_vector) +
-      theme(axis.title.x = element_blank()) 
-
-    Team_home_outcomes + Team_away_outcomes +
-  plot_layout(guides = "collect", nrow = 2)
-}, height = 500, width = 605)
-```
-
-Shooting Percentage in Close Home Games vs Close Away Games
-=============================================================
-
-
-Inputs {.sidebar}
--------------------------
-```{r, echo=FALSE}
-
-inputPanel(
- selectInput("teams6", label = "Home Team Graph:", 
-             choices = c("Atlanta Dream" = "Atlanta Dream",
-                         "Chicago Sky" = "Chicago Sky",
-                         "Connecticut Sun" = "Connecticut Sun",
-                         "Dallas Wings" = "Dallas Wings",
-                         "Indiana Fever" = "Indiana Fever",
-                         "Las Vegas Aces" = "Las Vegas Aces",
-                         "Los Angeles Spark" = "Los Angeles Spark",
-                         "Minnesota Lynx" = "Minnesota Lynx",
-                         "Phoenix Mercury" = "Phoenix Mercury",
-                         "Seattle Storm" = "Seattle Storm",
-                         "Washington Mystics" = "Washington Mystics",
-                         "New York Liberty" = "New York Liberty"))
-)
-```
-
-Row
--------------------------------------
-
-```{r}
-renderPlot({
-ggplot(all_shots_made, aes(x = team, y = n, fill = made_shot))  +
-  geom_bar(color = "black", stat = "identity") +
-  scale_fill_manual(values = c("white", "#E77500")) +
-    theme(panel.background = element_rect(fill = "gray80"), panel.grid.minor = element_blank()) +
-  labs(title = "Number of Shots Made vs. Missed in Close Games",
-       x = "WNBA Team",
-       y = "Number of Shots",
-       fill = "Made or Missed"
-       )
-
- }, height = 500, width = 605)
-
-```
-
-
-```{r, echo=FALSE}
-
-renderPlot({
-all_close_game_shots |> 
-    filter(shooting_team == input$teams6) |>
-ggplot(aes(x = shooting_team, fill = made_shot))  +
-  geom_bar(color = "black") +
-  scale_fill_manual(values = c("white", "#E77500")) +
-    theme(panel.background = element_rect(fill = "gray80"), panel.grid.minor = element_blank()) +
-  labs(title = "Number of Shots Made vs. Missed in Close Games",
-       x = "WNBA Team",
-       y = "Number of Shots",
-       fill = "Made or Missed"
-       )
-
- }, height = 500, width = 605)
-
- 
-```
-
-
-Row
--------------------------------------
-
-```{r}
-
-renderPlot({
-ggplot(all_close_game_shots, aes(x = Shooting_Team_Home_Away)) +
-  geom_bar(aes(fill = made_shot), color = "black", position = "fill") +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  scale_fill_manual(values = c("white", "#E77500")) +
-  labs(title = "Shooting Percentage For Home And Away Teams In Close Games",
-       x = "Home vs. Away",
-       fill = "Result") +
-  theme(panel.background = element_rect(fill = "gray80"), panel.grid.minor = element_blank())
- }, height = 500, width = 605)
-
-
-```
-
-
-```{r}
-renderPlot({
-all_close_game_shots |> 
-    filter(shooting_team == input$teams6) |>
-    ggplot(aes(x = Shooting_Team_Home_Away)) +
-    geom_bar(aes(fill = made_shot), color = "black", position = "fill") +
-    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-    scale_fill_manual(values = c("white", "#E77500")) +
-    labs(title = "Each Team's Shotting Percentage For Home vs. Away Close Games",
-       x = "Home vs. Away",
-       fill = "Result") +
-  theme(panel.background = element_rect(fill = "gray80"), panel.grid.minor = element_blank()) 
- }, , height = 500, width = 605)
-
-```
-
-Row
--------------------------------------
-
-
-```{r}
-
-renderPlot({
-  ggplot(all_close_game_shots, aes(x = Shooting_Team_Home_Away, fill = Shooting_Team_Home_Away), height = 500, width = 605)  +
-  geom_bar(color = "black") +
-  scale_fill_manual(values = c("#161616", "#B54213")) +
-    theme(panel.background = element_rect(fill = "gray80"), panel.grid.minor = element_blank()) +
-  labs(title = "Number of Shots Home vs. Away in Close Games",
-       x = "WNBA Team",
-       y = "Number of Shots",
-       fill = "Home Or Away") 
-
-}, height = 500, width = 605)  # Set the dimensions here
-
-
-
-```
-
-```{r, echo=FALSE}
-
-renderPlot({
-all_close_game_shots |> 
-    filter(shooting_team == input$teams6) |>
-ggplot(aes(x = Shooting_Team_Home_Away, fill = Shooting_Team_Home_Away))  +
-  geom_bar(color = "black") +
-  scale_fill_manual(values = c("#161616", "#B54213")) +
-    theme(panel.background = element_rect(fill = "gray80"), panel.grid.minor = element_blank()) +
-  labs(title = "Number of Shots Home vs. Away in Close Games",
-       x = "WNBA Team",
-       y = "Number of Shots",
-       fill = "Home Or Away"
-       )
-
- }, height = 500, width = 605)
-
- 
-```
-
-
-Comparing Teams To Each Other
-=============================================================
-
-Inputs {.sidebar}
--------------------------
-
-```{r, echo=FALSE}
-
- inputPanel(
-    checkboxGroupInput("teams_check8", "Select Teams For Wins vs Losses:",
-                       choices = c("All", unique(as.character(win_losses2$teams))),                         
-                       selected = "All")
-  )
-```
-
-```{r, echo=FALSE}
-
- inputPanel(
-    checkboxGroupInput("teams_check7", "Select Teams For Shooting Percentage:",
-                       choices = c("All", unique(as.character(all_close_game_shots$shooting_team))),                         
-                       selected = "All")
-  )
-```
-
-Row
--------------------------------------
-```{r, echo=FALSE}
-
-
-renderPlot({
-    filtered_teams1 <- if("All" %in% input$teams_check8) {
-      win_loss_per_team
-    } else {
-      win_loss_per_team |>
-        filter(team %in% input$teams_check8)
-    }
-
-  ggplot(filtered_teams1, aes(x = home_or_away, y = occurences, fill = result)) +
-  geom_bar(position = position_fill(), stat = "identity") +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  scale_fill_manual(values = c("firebrick", "goldenrod1", "green4")) +
-  labs(title = "Outcomes For Home And Away Teams In Close Games",
-       x = "Home vs. Away",
-       fill = "Result") +
-  facet_wrap(~team)+
-    theme(strip.text = element_text(
-    size = 20))
- }, height = 600, width = 1210)
-```
-
-Row
--------------------------------------
-
-```{r, echo=FALSE}
-renderPlot({
-    filtered_teams7 <- if("All" %in% input$teams_check7) {
-      all_close_game_shots
-    } else {
-      all_close_game_shots |>
-        filter(shooting_team %in% input$teams_check7)
-    }
-
-ggplot(filtered_teams7, aes(x = Shooting_Team_Home_Away)) +
-  geom_bar(aes(fill = made_shot), color = "black", position = "fill") +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  scale_fill_manual(values = c("white", "#E77500")) +
-  labs(title = "Each Team's Shotting Percentage For Home vs. Away Close Games",
-       x = "Home vs. Away",
-       fill = "Result") +
-  theme_gray() +
-  facet_wrap(~shooting_team) +
-  theme(strip.text = element_text(
-    size = 20))
- }, height = 600, width = 1210)
-
- 
-```
-
-WNBA Team Shooting
-==========================
-
-Row 
--------------------------
+## Row
 
 ```{r, echo=FALSE}
 inputPanel(
@@ -780,8 +368,7 @@ inputPanel(
 
 ```
 
-Row 
--------------------------
+## Row
 
 ```{r, echo = FALSE}
 renderPlot({
@@ -843,11 +430,33 @@ renderPlot({
 })
 ```
 
-Player Shooting
-==========================
+## Row
 
-Row 
--------------------------
+### **Question & Plots Explanation:**
+
+**Question 1:** The first question we chose to look at is how the various audio features differ by genre.
+
+**Plots Explanation:** The left plot analyzes these features over time and the right plot measures the frequency of each feature by genre. The viewer has the ability to compare different genres and observe how the audio features have changed over time or compare the frequency of various audio features.
+
+### **Observations / Conclusions:**
+
+-   For the majority of genres, danceability, loudness, and liveness have increased over time.
+
+-   For the majority of genres, energy, speechiness, acousticness, instrumentalness, valence, and tempo have decreased or stayed constant over time.
+
+-   Genres with high Danceability also tend to have high Energy and Loudness.
+
+-   All genres have low Speechiness, Acousticness, Instrumentalness, and Liveness.
+
+-   R&B, Hip-Hop, and Latin all have similar audio features.
+
+-   Country, Rock, and Indie have similar features.
+
+-   Pop and EDM have similar features.
+
+# Player Shooting
+
+## Row
 
 ```{r, echo=FALSE}
 inputPanel(
@@ -863,6 +472,7 @@ inputPanel(
 
 
 ```
+
 ```{r}
 renderUI({
            selectInput("players",
@@ -874,15 +484,13 @@ renderUI({
         })
 ```
 
-
-Row 
--------------------------
+## Row
 
 ```{r, echo = FALSE}
 renderPlot({
   # create data
   player_data <- wnba_shot_chart |> 
-  filter(shooting_player == input$players & shooting_team == input$teams)
+  filter(shooting_player == "Breanna Stewart" & shooting_team == "Liberty")
   
   # plot
   nyl_court +
@@ -931,3 +539,56 @@ renderPlot({
     )
 })
 ```
+
+## Row
+
+### **Question & Plots Explanation:**
+
+**Question 1:** The first question we chose to look at is how the various audio features differ by genre.
+
+**Plots Explanation:** The left plot analyzes these features over time and the right plot measures the frequency of each feature by genre. The viewer has the ability to compare different genres and observe how the audio features have changed over time or compare the frequency of various audio features.
+
+### **Observations / Conclusions:**
+
+-   For the majority of genres, danceability, loudness, and liveness have increased over time.
+
+-   For the majority of genres, energy, speechiness, acousticness, instrumentalness, valence, and tempo have decreased or stayed constant over time.
+
+-   Genres with high Danceability also tend to have high Energy and Loudness.
+
+-   All genres have low Speechiness, Acousticness, Instrumentalness, and Liveness.
+
+-   R&B, Hip-Hop, and Latin all have similar audio features.
+
+-   Country, Rock, and Indie have similar features.
+
+-   Pop and EDM have similar features.
+
+```{r}
+ player_data <- wnba_shot_chart |> 
+  filter(shooting_player == "Breanna Stewart" & shooting_team == "New York Liberty")
+
+  
+  # plot
+  nyl_court +
+    stat_summary_hex(
+      data = player_data,
+      aes(
+        y = coordinate_x,
+        x = coordinate_y,
+        z = made_shot,
+        group = -1
+      ),
+      binwidth = c(2, 2),
+      fun = mean,
+      color = "black",
+      alpha = .8
+    ) +
+    scale_fill_gradient(low = "white", high = "darkorange3") +
+    labs(fill = "Shooting Rate", title = paste("Shooting Efficiency")) +
+    theme(
+      legend.position = "bottom",
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 20)
+    )
+```
+
