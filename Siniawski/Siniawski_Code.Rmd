@@ -166,7 +166,7 @@ wnba_shots |>
   theme_bw() +
   geom_label(aes(label = prop), size = 4, fontface = "bold") +
   labs(
-    title = "Shooting Percentages in Playoffs",
+    title = "",
     x = "Shooting Percentage",
     y = "Teams",
     fill = "Teams",
@@ -210,7 +210,7 @@ playoff1 |>
   geom_text(aes(label = freq), x = 0.03, fontface = "bold") +
   geom_text(label = "shots", x = 0.08, fontface = "bold") +
   labs(
-    title = "Olivia Nelson-Ododa and Crystal Dangerfield Clutch Up",
+    title = "",
     x = "Shooting Percentage",
     y = "Player",
     caption = "Minimum of 18 shot attempts
@@ -250,7 +250,7 @@ playoff1 |>
   geom_text(label = "shots", x = 0.035, fontface = "bold") +
   theme_bw() +
   labs(
-    title = "Cayla George and Marine Johannes Don't Rise to the Occasion",
+    title = "",
     x = "Shooting Percentage",
     y = "Player",
     caption = "Minimum of 18 shot attempts
@@ -328,7 +328,7 @@ wnba_shots |>
   scale_y_continuous(breaks = c(0, 0.25, 0.5, 0.75, 1), limits = c(0, 1)) +
   theme_bw() +
   labs(
-    title = "Time Series of Goal Percentage in a Game (Playoffs)",
+    title = "",
     x = "Game Time Remaining", 
     y = "Shooting Percentage",
     caption = "Data Courtesy of Wehoop"
@@ -408,22 +408,22 @@ wnba_shots |>
 ```{r}
 # Graph 1
 wnba_shots |>
-  filter(game_type == 2) |> 
+  filter(game_type == 3, shooting_team == "Las Vegas Aces") |> 
   select(time_group, shooting_team, made_shot) |> 
-  group_by(time_group, shooting_team) |> 
+  group_by(time_group) |> 
   summarise(num_shots = n(), 
             total_shots_made = sum(made_shot)) |> 
   mutate(prop = round(total_shots_made / num_shots, 3)) |>
-  ggplot(aes(x = time_group, y = prop, color = shooting_team)) +
-  geom_line(alpha = 0.3) +
-  geom_line(stat = "smooth", alpha = 0.6, linewidth = 1.5) +
+  ggplot(aes(x = time_group, y = prop)) +
+  geom_line(alpha = 0.3, color = "orange1") +
+  geom_line(stat = "smooth", alpha = 0.8, linewidth = 1.5, color = "#E77500") +
   # geom_smooth(alpha = 0.2, se = FALSE) +
-  geom_hline(yintercept = 0.5, color = "red", size = 1, linetype = "dashed") +
+  geom_hline(yintercept = 0.5, color = "purple2", size = 1, linetype = "dashed") +
   # facet_wrap(~ shooting_team) +
   scale_x_reverse() +
   theme_bw() +
   labs(
-    title = "Time Series of Goal Percentage in a Game (Regular Season)",
+    title = "Time Series of Shooting Percentage in Playoff Game",
     x = "Game Time Remaining",
     y = "Shooting Percentage",
     caption = "Data Courtesy of Wehoop"
@@ -435,56 +435,6 @@ wnba_shots |>
 
 
 
-
-# Graph 2
-wnba_shots |> 
-  filter(game_type == 3) |> 
-  group_by(time_group, shooting_team) |> 
-  summarise(num_shots = n(), 
-            total_shots_made = sum(made_shot)) |> 
-  mutate(prop = round(total_shots_made / num_shots, 3)) |> 
-  ggplot(aes(x = time_group, y = prop, color = shooting_team)) +
-  geom_line(alpha = 0.3) +
-  geom_line(stat = "smooth", alpha = 0.6, linewidth = 1.5) +
-  # geom_smooth(alpha = 0.2, se = FALSE) +
-  geom_hline(yintercept = 0.5, color = "red", size = 1, linetype = "dashed") +
-  # facet_wrap(vars(shooting_team)) +
-  scale_x_reverse() +
-  theme_bw() +
-  labs(
-    title = "Time Series of Goal Percentage in a Game (Playoffs)",
-    x = "Game Time Remaining", 
-    y = "Shooting Percentage",
-    caption = "Data Courtesy of Wehoop"
-  ) +
-  theme(
-    legend.position = "none",
-    plot.title = element_text(hjust = 0.5, face= "bold")
-  )
-
-
-
-# Graph 3
-wnba_shots |> 
-  filter(game_type == 2) |> 
-  group_by(time_group, shooting_team) |> 
-  summarise(num_shots = n()) |> 
-  ggplot(aes(x = time_group, y = log(num_shots), color = shooting_team)) +
-  geom_line(alpha = 0.4) +
-  geom_smooth(alpha = 0.2, se = FALSE) +
-  # facet_wrap(vars(shooting_team)) +
-  scale_x_reverse() +
-  theme_bw() +
-  labs(
-    title = "Time Series of Shots in a Game (Regular Season)",
-    x = "Game Time Remaining", 
-    y = "Number of Shots",
-    caption = "Data Courtesy of Wehoop"
-  ) +
-  theme(
-    legend.position = "none",
-    plot.title = element_text(hjust = 0.5, face= "bold")
-  )
 ```
 
 
