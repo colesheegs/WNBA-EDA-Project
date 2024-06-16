@@ -80,6 +80,7 @@ color_vector <- c("Atlanta Dream" = "#C8102E", "Chicago Sky" = "#418FDE", "Conne
 
 ```{r}
 wnba_shots |>   
+  # filter(game_type == 3) |> 
   group_by(shooting_team) |> 
   summarise(total_shot_value = sum(shot_value)) |> 
   filter(total_shot_value >= 1000) |> 
@@ -87,19 +88,23 @@ wnba_shots |>
   ggplot(aes(y = shooting_team, x = total_shot_value)) +
   geom_col(aes(fill = shooting_team)) +
   theme_bw() + 
-  geom_label(aes(label = total_shot_value), size = 3) + 
+  geom_label(aes(label = total_shot_value), size = 4, fontface = "bold") + 
   scale_fill_manual(values = color_vector) +
   labs(
     title = "New York and Vegas Scoring More",
-    x = "Total Shot Values", 
+    x = "Total Points Scored", 
     y = "Teams",
     fill = "Teams",
     caption = "Data Courtesy of Wehoop"
   ) + 
-  theme(axis.text.x=element_blank(),
-        axis.ticks.x=element_blank(),
+  theme(#axis.text.x=element_blank(),
+        #axis.ticks.x=element_blank(),
         legend.position = "none",
-        plot.title = element_text(hjust = 0.5, face = "bold"))
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        axis.text.x = element_text(size = 10, vjust = 0.65),
+        axis.text.y = element_text(size = 10), 
+        axis.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
 ```
 
 
@@ -126,18 +131,22 @@ wnba_shots |>
   geom_col(aes(fill = shooting_team)) +
   scale_fill_manual(values = color_vector) +
   theme_bw() +
-  geom_label(aes(label = prop), size = 4) +
+  geom_label(aes(label = prop), size = 4, fontface = "bold") +
   labs(
     title = "Shooting Percentage in Regular Season",
-    x = "Proportion",
+    x = "Shooting Percentage",
     y = "Teams",
     fill = "Teams",
     caption = "Data Courtesy of Wehoop"
   ) +
-  theme(axis.text.x=element_blank(),
-        axis.ticks.x=element_blank(),
+  theme(#axis.text.x=element_blank(),
+        #axis.ticks.x=element_blank(),
         legend.position = "none",
-        plot.title = element_text(hjust = 0.5, face = "bold"))
+        plot.title = element_text(hjust = 0.5, face = "bold"), 
+        axis.text.x = element_text(size = 10, vjust = 0.65),
+        axis.text.y = element_text(size = 10), 
+        axis.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
 ```
 
 
@@ -155,18 +164,22 @@ wnba_shots |>
   geom_col(aes(fill = shooting_team)) +
   scale_fill_manual(values = color_vector) +
   theme_bw() +
-  geom_label(aes(label = prop), size = 4) +
+  geom_label(aes(label = prop), size = 4, fontface = "bold") +
   labs(
     title = "Shooting Percentages in Playoffs",
-    x = "Proportion",
+    x = "Shooting Percentage",
     y = "Teams",
     fill = "Teams",
     caption = "Data Courtesy of Wehoop"
   ) + 
-  theme(axis.text.x=element_blank(),
-        axis.ticks.x=element_blank(),
+  theme(#axis.text.x=element_blank(),
+        #axis.ticks.x=element_blank(),
         legend.position = "none",
-        plot.title = element_text(hjust = 0.5, face = "bold"))
+        plot.title = element_text(hjust = 0.5, face = "bold"), 
+        axis.text.x = element_text(size = 10, vjust = 0.65),
+        axis.text.y = element_text(size = 10), 
+        axis.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
 ```
 
 
@@ -177,11 +190,12 @@ wnba_shots |>
 
 ```{r}
 playoff1 <- wnba_shots |> 
-  select(game_type, desc, made_shot, shooter) |> 
+  select(game_type, made_shot, shooter, shot_value) |> 
   filter(game_type == 3) |> 
   group_by(shooter) |> 
   summarise(freq = n(),
-    total_shots_made = sum(made_shot)) |> 
+    total_shots_made = sum(made_shot),
+    total_points = sum(shot_value)) |> 
   mutate(prop = round(total_shots_made / freq, 3))
   
 
@@ -192,18 +206,34 @@ playoff1 |>
   ggplot(aes(y = reorder(shooter, prop), x = prop)) +
   geom_col(fill = "#E77500") +
   theme_bw() +
-  geom_label(aes(label = prop), size = 4, label.size = 0.5) +
+  geom_label(aes(label = prop), size = 4, label.size = 0.5, fontface = "bold") +
+  geom_text(aes(label = freq), x = 0.03, fontface = "bold") +
+  geom_text(label = "shots", x = 0.08, fontface = "bold") +
   labs(
     title = "Olivia Nelson-Ododa and Crystal Dangerfield Clutch Up",
-    x = "Proportion",
+    x = "Shooting Percentage",
     y = "Player",
-    caption = "Minimum of 19 shot attempts
+    caption = "Minimum of 18 shot attempts
     
     Data Courtesy of Wehoop"
   ) +
-  theme(plot.title = element_text(hjust = 0.5, face= "bold"))
+  theme(plot.title = element_text(hjust = 0.5, face= "bold"),
+        axis.text.x = element_text(size = 10, vjust = 0.65),
+        axis.text.y = element_text(size = 10), 
+        axis.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
 
 
+
+# wnba_shots |> 
+#   filter(game_type == 3) |> 
+#   group_by(shooter) |> 
+#   summarise(total_shots = n(),
+#             total_made = sum(made_shot),
+#             total_points = sum(shot_value)) |> 
+#   mutate(shooting_perc = total_made / total_shots,
+#          points_per_shot = total_points / total_shots) |> 
+#   filter(total_shots >= 18)
 ```
 
 
@@ -215,17 +245,23 @@ playoff1 |>
   head(n = 10) |> 
   ggplot(aes(y = reorder(shooter, -prop), x = prop)) +
   geom_col(fill = "#E77500") +
-  geom_label(aes(label = prop), size = 4, label.size = 0.5) +
+  geom_label(aes(label = prop), size = 4, label.size = 0.5, fontface = "bold") +
+  geom_text(aes(label = freq), x = 0.01, fontface = "bold") +
+  geom_text(label = "shots", x = 0.035, fontface = "bold") +
   theme_bw() +
   labs(
     title = "Cayla George and Marine Johannes Don't Rise to the Occasion",
-    x = "Proportion",
+    x = "Shooting Percentage",
     y = "Player",
-    caption = "Minimum of 20 shot attempts
+    caption = "Minimum of 18 shot attempts
     
     Data Courtesy of Wehoop"
   )  +
-  theme(plot.title = element_text(hjust = 0.5, face= "bold"))
+  theme(plot.title = element_text(hjust = 0.5, face= "bold"),
+        axis.text.x = element_text(size = 10, vjust = 0.65),
+        axis.text.y = element_text(size = 10), 
+        axis.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
 
 
 ```
@@ -250,10 +286,10 @@ wnba_shots |>
   summarise(num_shots = n(), 
             total_shots_made = sum(made_shot)) |> 
   mutate(prop = round(total_shots_made / num_shots, 3)) |>
-  ggplot(aes(x = time_group, y = prop, color = shooting_team)) +
-  geom_line(alpha = 0.4) +
-  geom_smooth(alpha = 0.2, se = FALSE) +
-  geom_hline(yintercept = 0.5, color = "red", size = 1, linetype = "dashed") +
+  ggplot(aes(x = time_group, y = prop)) +
+  geom_line(alpha = 0.4, color = "orange1") +
+  geom_smooth(color = "#E77500", alpha = 0.2, se = FALSE) +
+  geom_hline(yintercept = 0.5, color = "purple2", size = 1, linetype = "dashed") +
   facet_wrap(~ shooting_team) +
   scale_x_reverse() +
   scale_y_continuous(breaks = c(0.25, 0.5, 0.75)) +
@@ -266,7 +302,11 @@ wnba_shots |>
   ) +
   theme(
     legend.position = "none",
-    plot.title = element_text(hjust = 0.5, face= "bold")
+    plot.title = element_text(size = 16, hjust = 0.5, face= "bold"),
+    axis.text.x = element_text(size = 10, vjust = 0.65),
+    axis.text.y = element_text(size = 10), 
+    axis.title = element_text(size = 15),
+    strip.text = element_text(size = 12)
   )
 
 
@@ -279,10 +319,10 @@ wnba_shots |>
   summarise(num_shots = n(), 
             total_shots_made = sum(made_shot)) |> 
   mutate(prop = round(total_shots_made / num_shots, 3)) |> 
-  ggplot(aes(x = time_group, y = prop, color = shooting_team)) +
-  geom_line(alpha = 0.4) +
-  geom_smooth(alpha = 0.2, se = FALSE) +
-  geom_hline(yintercept = 0.5, color = "red", size = 1, linetype = "dashed") +
+  ggplot(aes(x = time_group, y = prop)) +
+  geom_line(alpha = 0.4, color = "orange1") +
+  geom_smooth(color = "#E77500", alpha = 0.2, se = FALSE) +
+  geom_hline(yintercept = 0.5, color = "purple2", size = 1, linetype = "dashed") +
   facet_wrap(vars(shooting_team)) +
   scale_x_reverse() +
   scale_y_continuous(breaks = c(0, 0.25, 0.5, 0.75, 1), limits = c(0, 1)) +
@@ -295,7 +335,11 @@ wnba_shots |>
   ) +
   theme(
     legend.position = "none",
-    plot.title = element_text(hjust = 0.5, face= "bold")
+    plot.title = element_text(size = 16, hjust = 0.5, face= "bold"),
+    axis.text.x = element_text(size = 10, vjust = 0.65),
+    axis.text.y = element_text(size = 10), 
+    axis.title = element_text(size = 15),
+    strip.text = element_text(size = 15)
   )
 
 
@@ -320,7 +364,11 @@ wnba_shots |>
   ) +
   theme(
     legend.position = "none",
-    plot.title = element_text(hjust = 0.5, face= "bold")
+    plot.title = element_text(size = 20, hjust = 0.5, face= "bold"),
+    axis.text.x = element_text(size = 10, vjust = 0.65),
+    axis.text.y = element_text(size = 10), 
+    axis.title = element_text(size = 15),
+    strip.text = element_text(size = 15)
   )
 
 
@@ -345,7 +393,11 @@ wnba_shots |>
   ) +
   theme(
     legend.position = "none",
-    plot.title = element_text(hjust = 0.5, face= "bold")
+    plot.title = element_text(size = 20, hjust = 0.5, face= "bold"),
+    axis.text.x = element_text(size = 10, vjust = 0.65),
+    axis.text.y = element_text(size = 10), 
+    axis.title = element_text(size = 15),
+    strip.text = element_text(size = 15)
   )
   
 ```
