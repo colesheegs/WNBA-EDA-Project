@@ -595,3 +595,4 @@ ggplot(final_possession, aes(x = fct_rev(fct_infreq(shooting_team)), fill = shoo
   scale_fill_manual(values = c("#C8102E", "#418FDE", "#C4D600", "#FFCD00", "#702F8A",  "#003DA5","#CB6015", "#2C5234", "#0C2340"  )) 
   # scale_color_manual(values = c("#418FDE", "#FFCD00", "#0C2340", "#041E42", "#FFC72C", "#FF671F", "#201747", "#FBE122", "#C8102E"))
 ```
+

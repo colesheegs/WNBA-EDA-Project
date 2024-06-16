@@ -1,0 +1,53 @@
+---
+title: "Random"
+author: "Belle Schmidt"
+date: "2024-06-16"
+output: html_document
+runtime: shiny
+---
+
+```{r}
+library(shiny)
+library(ggplot2)
+library(dplyr)
+
+# Sample data for demonstration purposes
+win_loss_per_team <- data.frame(
+  team = rep(c("Team A", "Team B"), each = 4),
+  home_or_away = rep(c("Home", "Away"), times = 4),
+  occurences = c(5, 10, 7, 3, 8, 12, 6, 4),
+  result = rep(c("Win", "Loss"), times = 4)
+)
+
+# Custom color scale (replace with actual color scale)
+custom_color <- scale_fill_manual(values = c("Win" = "blue", "Loss" = "red"))
+
+ui <- fluidPage(
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("teams5", "Select Team:", choices = unique(win_loss_per_team$team))
+    ),
+    mainPanel(
+      plotOutput("plot1", height = "600px")  # Adjust the height here
+    )
+  )
+)
+
+server <- function(input, output) {
+  output$plot1 <- renderPlot({
+    win_loss_per_team |> 
+      filter(team == input$teams5) |>
+      ggplot(aes(x = home_or_away, y = occurences, fill = result)) +
+      geom_bar(position = position_fill(), stat = "identity") +
+      scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+      custom_color +
+      labs(title = "Outcomes For Home And Away Teams In Close Games",
+           x = "Home vs. Away",
+           fill = "Result") +
+      facet_wrap(~team)
+  })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
