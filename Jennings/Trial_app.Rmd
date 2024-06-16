@@ -68,7 +68,6 @@ library(tidyverse)
 library(flexdashboard)
 library(shiny)
 library(sportyR)
-library(stringr)
 ```
 
 ```{r, echo = FALSE}
@@ -190,7 +189,11 @@ renderPlot({
          title = paste(input$teams, "Shooting Efficiency")) +
     theme(
       legend.position = "bottom",
-      plot.title = element_text(hjust = 0.5, face = "bold", size = 20)
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 28),
+      legend.title.position = "top",
+      legend.title = element_text(size = 16, face = "bold", hjust = 0.5),
+      legend.key.size = unit(0.5, "inches"),
+      legend.text = element_text(size = 12)
     )
 })
 ```
@@ -215,11 +218,11 @@ renderPlot({
          title = paste(input$teams, "Shooting Frequency")) +
     theme(
       legend.position = "bottom",
-      plot.title = element_text(
-        hjust = 0.5,
-        face = "bold",
-        size = 20
-      )
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 28),
+      legend.title.position = "top",
+      legend.title = element_text(size = 16, face = "bold", hjust = 0.5),
+      legend.key.size = unit(0.5, "inches"),
+      legend.text = element_text(size = 12)
     )
 })
 ```
@@ -313,7 +316,11 @@ renderPlot({
     labs(fill = "Shooting Rate", title = paste(input$players, "Shooting Efficiency")) +
     theme(
       legend.position = "bottom",
-      plot.title = element_text(hjust = 0.5, face = "bold", size = 20)
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 28),
+      legend.title.position = "top",
+      legend.title = element_text(size = 16, face = "bold", hjust = 0.5),
+      legend.key.size = unit(0.5, "inches"),
+      legend.text = element_text(size = 12)
     )
 })
 ```
@@ -337,7 +344,11 @@ renderPlot({
     labs(fill = "# of Shots", title = paste(input$players, "Shooting Frequency")) +
     theme(
       legend.position = "bottom",
-      plot.title = element_text(hjust = 0.5, face = "bold", size = 20)
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 28),
+      legend.title.position = "top",
+      legend.title = element_text(size = 16, face = "bold", hjust = 0.5),
+      legend.key.size = unit(0.5, "inches"),
+      legend.text = element_text(size = 12)
     )
 })
 ```
