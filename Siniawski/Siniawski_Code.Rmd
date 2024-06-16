@@ -70,6 +70,8 @@ wnba_shots <- wnba_shots |>
 color_vector <- c("Atlanta Dream" = "#C8102E", "Chicago Sky" = "#418FDE", "Connecticut Sun" = "#643335", "Dallas Wings" = "#C4D600", "Indiana Fever" = "#FFCD00", "Las Vegas Aces" = "#000000", "Los Angeles Spark" = "#702F8A", "Minnesota Lynx" = "#236192", "New York Liberty" = "#003DA5", "Phoenix Mercury" = "#CB6015", "Seattle Storm" = "#2C5234", "Washington Mystics" = "#0C2340")
 
 
+wnba_shots <- wnba_shots[!grepl('Free Throw', wnba_shots$shot_type),]
+
 # shot_chart <- wnba_shotchartdetail()
 # 
 # shot_chart <- shot_chart$Shot_Chart_Detail
@@ -113,7 +115,7 @@ wnba_shots |>
 
 
 ```{r}
-# wnba_shots2 <- wnba_shots[!grepl('Free Throw', wnba_shots$shot_type),]
+
 ```
 
 
@@ -278,6 +280,9 @@ wnba_shots <- wnba_shots |>
 
 
 ```{r}
+shot_avg_perc <- 0.44
+
+
 # Graph 1
 wnba_shots |>
   filter(game_type == 2) |> 
@@ -289,7 +294,7 @@ wnba_shots |>
   ggplot(aes(x = time_group, y = prop)) +
   geom_line(alpha = 0.4, color = "orange1") +
   geom_smooth(color = "#E77500", alpha = 0.2, se = FALSE) +
-  geom_hline(yintercept = 0.5, color = "purple2", size = 1, linetype = "dashed") +
+  geom_hline(yintercept = 0.44, color = "purple2", size = 1, linetype = "dashed") +
   facet_wrap(~ shooting_team) +
   scale_x_reverse() +
   scale_y_continuous(breaks = c(0.25, 0.5, 0.75)) +
@@ -322,7 +327,7 @@ wnba_shots |>
   ggplot(aes(x = time_group, y = prop)) +
   geom_line(alpha = 0.4, color = "orange1") +
   geom_smooth(color = "#E77500", alpha = 0.2, se = FALSE) +
-  geom_hline(yintercept = 0.5, color = "purple2", size = 1, linetype = "dashed") +
+  geom_hline(yintercept = 0.44, color = "purple2", size = 1, linetype = "dashed") +
   facet_wrap(vars(shooting_team)) +
   scale_x_reverse() +
   scale_y_continuous(breaks = c(0, 0.25, 0.5, 0.75, 1), limits = c(0, 1)) +
@@ -418,7 +423,8 @@ wnba_shots |>
   geom_line(alpha = 0.3, color = "orange1") +
   geom_line(stat = "smooth", alpha = 0.8, linewidth = 1.5, color = "#E77500") +
   # geom_smooth(alpha = 0.2, se = FALSE) +
-  geom_hline(yintercept = 0.5, color = "purple2", size = 1, linetype = "dashed") +
+  geom_hline(yintercept = 0.44, color = "purple2", size = 1, linetype = "dashed") +
+  geom_text(aes(x = 42, y = shot_avg_perc, vjust = -0.5, hjust = 1), label = "Regular Season Shooting Percentage: 0.44") +
   # facet_wrap(~ shooting_team) +
   scale_x_reverse() +
   theme_bw() +
@@ -434,6 +440,43 @@ wnba_shots |>
   )
 
 
+wnba_shots |> 
+  filter(game_type == 2) |> 
+  summarise(num_shots = n(),
+         total_shots_made = sum(made_shot),
+         shooting_perc = total_shots_made / num_shots)
+
+```
+
+
+
+```{r}
+wnba_shots |>
+  filter(game_type == 2, shooting_team == "Las Vegas Aces") |> 
+  select(time_group, shooting_team, made_shot) |> 
+  group_by(time_group) |> 
+  summarise(num_shots = n(), 
+            total_shots_made = sum(made_shot)) |> 
+  mutate(prop = round(total_shots_made / num_shots, 3)) |>
+  ggplot(aes(x = time_group, y = prop)) +
+  geom_line(alpha = 0.3, color = "orange1") +
+  geom_line(stat = "smooth", alpha = 0.8, linewidth = 1.5, color = "#E77500") +
+  # geom_smooth(alpha = 0.2, se = FALSE) +
+  geom_hline(yintercept = 0.44, color = "purple2", size = 1, linetype = "dashed") +
+  geom_text(aes(x = 42, y = shot_avg_perc, vjust = -0.5, hjust = 1), label = "Regular Season Shooting Percentage: 0.44") +
+  # facet_wrap(~ shooting_team) +
+  scale_x_reverse() +
+  theme_bw() +
+  labs(
+    title = "Time Series of Shooting Percentage in Playoff Game",
+    x = "Game Time Remaining",
+    y = "Shooting Percentage",
+    caption = "Data Courtesy of Wehoop"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face= "bold")
+  )
 
 ```
 
