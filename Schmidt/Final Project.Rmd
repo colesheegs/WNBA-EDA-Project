@@ -5,7 +5,8 @@ output:
   flexdashboard::flex_dashboard:
     orientation: rows
     theme: 
-      bootswatch: united
+      bootswatch: flatly
+      color: orange
 ---
 
 About
@@ -303,7 +304,8 @@ wnba_shot_chart <- wnba_shots |>
   # filter by regular season and remove outliers
   filter(game_type == 2 & abs(coordinate_x) >= 10 &
            # remove Free Throws 
-           str_like(shot_type, "Free Throw%") == FALSE) 
+           str_like(shot_type, "Free Throw%") == FALSE) |> 
+  mutate(made_shot = if_else(made_shot == "Made", TRUE, FALSE))
   
 # WNBA court (New York Libery)
 nyl_court <- sportyR::geom_basketball("WNBA", display = "offense", rotation = 90,
@@ -417,6 +419,35 @@ renderPlot({
   }, height = 520, width = 1210)
 
 ```
+
+
+Row
+-------------------------
+
+### **Question & Plots Explanation:**
+
+**Question 1:** The first question we chose to look at is how the various audio features differ by genre. 
+
+
+
+**Plots Explanation:** The left plot analyzes these features over time and the right plot measures the frequency of each feature by genre. The viewer has the ability to compare different genres and observe how the audio features have changed over time or compare the frequency of various audio features.
+
+
+### **Observations / Conclusions:**
+
+- For the majority of genres, danceability, loudness, and liveness have increased over time.
+
+- For the majority of genres, energy, speechiness, acousticness, instrumentalness, valence, and tempo have decreased or stayed constant over time.
+
+- Genres with high Danceability also tend to have high Energy and Loudness.
+
+- All genres have low Speechiness, Acousticness, Instrumentalness, and Liveness.
+
+- R&B, Hip-Hop, and Latin all have similar audio features.
+
+- Country, Rock, and Indie have similar features.
+
+- Pop and EDM have similar features.
 
 Outcome Types in Close Home Games vs Close Away Games
 ============================================================= 
@@ -536,6 +567,35 @@ renderPlot({
   plot_layout(guides = "collect", nrow = 2)
 }, height = 500, width = 605)
 ```
+
+
+Row
+-------------------------
+
+### **Question & Plots Explanation:**
+
+**Question 1:** The first question we chose to look at is how the various audio features differ by genre. 
+
+
+
+**Plots Explanation:** The left plot analyzes these features over time and the right plot measures the frequency of each feature by genre. The viewer has the ability to compare different genres and observe how the audio features have changed over time or compare the frequency of various audio features.
+
+
+### **Observations / Conclusions:**
+
+- For the majority of genres, danceability, loudness, and liveness have increased over time.
+
+- For the majority of genres, energy, speechiness, acousticness, instrumentalness, valence, and tempo have decreased or stayed constant over time.
+
+- Genres with high Danceability also tend to have high Energy and Loudness.
+
+- All genres have low Speechiness, Acousticness, Instrumentalness, and Liveness.
+
+- R&B, Hip-Hop, and Latin all have similar audio features.
+
+- Country, Rock, and Indie have similar features.
+
+- Pop and EDM have similar features.
 
 Shooting Percentage in Close Home Games vs Close Away Games
 =============================================================
@@ -682,6 +742,35 @@ ggplot(aes(x = Shooting_Team_Home_Away, fill = Shooting_Team_Home_Away))  +
 ```
 
 
+Row
+-------------------------
+
+### **Question & Plots Explanation:**
+
+**Question 1:** The first question we chose to look at is how the various audio features differ by genre. 
+
+
+
+**Plots Explanation:** The left plot analyzes these features over time and the right plot measures the frequency of each feature by genre. The viewer has the ability to compare different genres and observe how the audio features have changed over time or compare the frequency of various audio features.
+
+
+### **Observations / Conclusions:**
+
+- For the majority of genres, danceability, loudness, and liveness have increased over time.
+
+- For the majority of genres, energy, speechiness, acousticness, instrumentalness, valence, and tempo have decreased or stayed constant over time.
+
+- Genres with high Danceability also tend to have high Energy and Loudness.
+
+- All genres have low Speechiness, Acousticness, Instrumentalness, and Liveness.
+
+- R&B, Hip-Hop, and Latin all have similar audio features.
+
+- Country, Rock, and Indie have similar features.
+
+- Pop and EDM have similar features.
+
+
 Comparing Teams To Each Other
 =============================================================
 
@@ -760,10 +849,40 @@ ggplot(filtered_teams7, aes(x = Shooting_Team_Home_Away)) +
  
 ```
 
+
+Row
+-------------------------
+
+### **Question & Plots Explanation:**
+
+**Question 1:** The first question we chose to look at is how the various audio features differ by genre. 
+
+
+
+**Plots Explanation:** The left plot analyzes these features over time and the right plot measures the frequency of each feature by genre. The viewer has the ability to compare different genres and observe how the audio features have changed over time or compare the frequency of various audio features.
+
+
+### **Observations / Conclusions:**
+
+- For the majority of genres, danceability, loudness, and liveness have increased over time.
+
+- For the majority of genres, energy, speechiness, acousticness, instrumentalness, valence, and tempo have decreased or stayed constant over time.
+
+- Genres with high Danceability also tend to have high Energy and Loudness.
+
+- All genres have low Speechiness, Acousticness, Instrumentalness, and Liveness.
+
+- R&B, Hip-Hop, and Latin all have similar audio features.
+
+- Country, Rock, and Indie have similar features.
+
+- Pop and EDM have similar features.
+
+
 WNBA Team Shooting
 ==========================
 
-Row 
+Inputs {.sidebar}
 -------------------------
 
 ```{r, echo=FALSE}
@@ -809,9 +928,13 @@ renderPlot({
          title = paste(input$teams, "Shooting Efficiency")) +
     theme(
       legend.position = "bottom",
-      plot.title = element_text(hjust = 0.5, face = "bold", size = 20)
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 28),
+      legend.title.position = "top",
+      legend.title = element_text(size = 16, face = "bold", hjust = 0.5),
+      legend.key.size = unit(0.5, "inches"),
+      legend.text = element_text(size = 12)
     )
-})
+}, height = 500, width = 605)
 ```
 
 ```{r, echo=FALSE}
@@ -834,19 +957,48 @@ renderPlot({
          title = paste(input$teams, "Shooting Frequency")) +
     theme(
       legend.position = "bottom",
-      plot.title = element_text(
-        hjust = 0.5,
-        face = "bold",
-        size = 20
-      )
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 28),
+      legend.title.position = "top",
+      legend.title = element_text(size = 16, face = "bold", hjust = 0.5),
+      legend.key.size = unit(0.5, "inches"),
+      legend.text = element_text(size = 12)
     )
-})
+}, height = 500, width = 605)
 ```
+
+
+Row
+-------------------------
+
+### **Question & Plots Explanation:**
+
+**Question 1:** The first question we chose to look at is how the various audio features differ by genre. 
+
+
+
+**Plots Explanation:** The left plot analyzes these features over time and the right plot measures the frequency of each feature by genre. The viewer has the ability to compare different genres and observe how the audio features have changed over time or compare the frequency of various audio features.
+
+
+### **Observations / Conclusions:**
+
+- For the majority of genres, danceability, loudness, and liveness have increased over time.
+
+- For the majority of genres, energy, speechiness, acousticness, instrumentalness, valence, and tempo have decreased or stayed constant over time.
+
+- Genres with high Danceability also tend to have high Energy and Loudness.
+
+- All genres have low Speechiness, Acousticness, Instrumentalness, and Liveness.
+
+- R&B, Hip-Hop, and Latin all have similar audio features.
+
+- Country, Rock, and Indie have similar features.
+
+- Pop and EDM have similar features.
 
 Player Shooting
 ==========================
 
-Row 
+Inputs {.sidebar}
 -------------------------
 
 ```{r, echo=FALSE}
@@ -861,9 +1013,6 @@ inputPanel(
                                     "Seattle Storm", "Washington Mystics"))
 )
 
-
-```
-```{r}
 renderUI({
            selectInput("players",
                         "Select a Player",
@@ -872,11 +1021,14 @@ renderUI({
                   distinct(shooting_player) |> 
                   arrange(shooting_player))
         })
+
+
 ```
 
 
 Row 
 -------------------------
+
 
 ```{r, echo = FALSE}
 renderPlot({
@@ -903,9 +1055,13 @@ renderPlot({
     labs(fill = "Shooting Rate", title = paste(input$players, "Shooting Efficiency")) +
     theme(
       legend.position = "bottom",
-      plot.title = element_text(hjust = 0.5, face = "bold", size = 20)
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 28),
+      legend.title.position = "top",
+      legend.title = element_text(size = 16, face = "bold", hjust = 0.5),
+      legend.key.size = unit(0.5, "inches"),
+      legend.text = element_text(size = 12)
     )
-})
+}, height = 500, width = 605)
 ```
 
 ```{r, echo=FALSE}
@@ -927,7 +1083,40 @@ renderPlot({
     labs(fill = "# of Shots", title = paste(input$players, "Shooting Frequency")) +
     theme(
       legend.position = "bottom",
-      plot.title = element_text(hjust = 0.5, face = "bold", size = 20)
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 28),
+      legend.title.position = "top",
+      legend.title = element_text(size = 16, face = "bold", hjust = 0.5),
+      legend.key.size = unit(0.5, "inches"),
+      legend.text = element_text(size = 12)
     )
-})
+}, height = 500, width = 605)
 ```
+
+
+Row
+-------------------------
+
+### **Question & Plots Explanation:**
+
+**Question 1:** The first question we chose to look at is how the various audio features differ by genre. 
+
+
+
+**Plots Explanation:** The left plot analyzes these features over time and the right plot measures the frequency of each feature by genre. The viewer has the ability to compare different genres and observe how the audio features have changed over time or compare the frequency of various audio features.
+
+
+### **Observations / Conclusions:**
+
+- For the majority of genres, danceability, loudness, and liveness have increased over time.
+
+- For the majority of genres, energy, speechiness, acousticness, instrumentalness, valence, and tempo have decreased or stayed constant over time.
+
+- Genres with high Danceability also tend to have high Energy and Loudness.
+
+- All genres have low Speechiness, Acousticness, Instrumentalness, and Liveness.
+
+- R&B, Hip-Hop, and Latin all have similar audio features.
+
+- Country, Rock, and Indie have similar features.
+
+- Pop and EDM have similar features.
