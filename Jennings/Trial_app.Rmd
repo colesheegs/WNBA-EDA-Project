@@ -150,6 +150,7 @@ Row
 inputPanel(
  selectInput("teams",
                         "Select a Team",
+             selected = "Atlanta Dream",
                         choices = c("Atlanta Dream", "Chicago Sky",
                                     "Connecticut Sun", "Dallas Wings", 
                                     "Indiana Fever", "Las Vegas Aces",
@@ -266,6 +267,7 @@ Row
 inputPanel(
  selectInput("teams",
                         "Select a Team",
+             selected = "Atlanta Dream",
                         choices = c("Atlanta Dream", "Chicago Sky",
                                     "Connecticut Sun", "Dallas Wings", 
                                     "Indiana Fever", "Las Vegas Aces",
