@@ -333,6 +333,8 @@ season <- wnba_shots |>
   mutate(season = ifelse(game_type == 2, "Regular Season", "Playoffs"))
 
 shot_perc_table <- full_join(season, free_throw)
+
+shot_avg_perc <- 0.44
   
 shot_perc_table |> 
   filter(shooter == "A'ja Wilson") |> 
@@ -367,8 +369,6 @@ wnba_shots <- wnba_shots |>
 
 
 ```{r}
-shot_avg_perc <- 0.44
-
 
 # Graph 1
 wnba_shots |>
@@ -630,15 +630,23 @@ cluster_playoff |>
 
 # creating new dataset
 cluster_playoff2 <- wnba_shots |> 
-  select(game_type, desc, made_shot, shot_value, shooter) |> 
+  select(game_id, game_type, desc, made_shot, shot_value, shooter) |> 
   filter(game_type == 3) |> 
-  group_by(shooter) |> 
+  group_by(shooter, game_id) |> 
   summarise(freq = n(),
     total_shots_made = sum(made_shot),
     prop = total_shots_made / freq,
     total_points = sum(shot_value),
-    point_perc = total_points / freq) |> 
-  mutate(prop = round(total_shots_made / freq, 3))
+    point_perc = total_points / freq) |>
+  mutate(prop = round(total_shots_made / freq, 3),
+         games = 1) |> 
+  group_by(shooter) |>
+  summarise(gp = sum(games),
+            total_shots_made = sum(total_shots_made),
+            total_shots = sum(freq),
+            shot_perc = total_shots_made / total_shots,
+            total_points = sum(total_points),
+            pts_per_game = total_points / gp)
   
 
 
@@ -648,18 +656,18 @@ cluster_playoff2 <- wnba_shots |>
 cluster_playoff2 <- cluster_playoff2 |> 
   mutate(
     std_points = as.numeric(scale(total_points, center = TRUE, scale = TRUE)),
-    std_freq = as.numeric(scale(freq, center = TRUE, scale = TRUE))
+    std_shots = as.numeric(scale(total_shots, center = TRUE, scale = TRUE))
   )
 
 std_kmeans2 <- cluster_playoff2 |> 
-  select(std_points, std_freq) |> 
+  select(std_points, std_shots) |> 
   kmeans(algorithm = "Lloyd", centers = 3, nstart = 30)
 
 cluster_playoff2 |>
   mutate(
     player_clusters = as.factor(std_kmeans2$cluster)
   ) |>
-  ggplot(aes(x = std_points, y = std_freq,
+  ggplot(aes(x = std_points, y = std_shots,
              color = player_clusters)) +
   geom_point(size = 2, alpha = 0.5) + 
   ggthemes::scale_color_colorblind() +
@@ -689,19 +697,19 @@ cluster_playoff2 |>
   
 cluster_playoff2 <- cluster_playoff2 |> 
   mutate(
-    std_point_perc = as.numeric(scale(point_perc, center = TRUE, scale = TRUE)),
-    std_prop = as.numeric(scale(prop, center = TRUE, scale = TRUE))
+    std_ppg = as.numeric(scale(pts_per_game, center = TRUE, scale = TRUE)),
+    std_shot_perc = as.numeric(scale(shot_perc, center = TRUE, scale = TRUE))
   )
 
 std_kmeans2 <- cluster_playoff2 |> 
-  select(std_point_perc, std_prop) |> 
+  select(std_ppg, std_shot_perc) |> 
   kmeans(algorithm = "Lloyd", centers = 3, nstart = 30)
 
 cluster_playoff2 |>
   mutate(
     player_clusters = as.factor(std_kmeans2$cluster)
   ) |>
-  ggplot(aes(y = std_point_perc, x = std_prop,
+  ggplot(aes(y = std_ppg, x = std_shot_perc,
              color = player_clusters)) +
   geom_point(size = 2, alpha = 0.5) + 
   ggthemes::scale_color_colorblind() +
@@ -710,7 +718,7 @@ cluster_playoff2 |>
   theme_bw() +
   labs(
     x = "Shooting Precentage",
-    y = "Points Percentage",
+    y = "Points Per Game",
     color = "Player Clusters",
     title = "Impact Players in Playoffs",
     caption = "Data Courtesy of Wehoop"
@@ -719,6 +727,37 @@ cluster_playoff2 |>
     legend.position = "bottom",
     plot.title = element_text(hjust = 0.5, face= "bold")
   )
+
+
+# function to perform clustering for each value of k
+gapminder_kmeans <- function(k) {
+  
+  kmeans_results <- cluster_playoff2 |>
+    select(std_ppg, std_shot_perc) |>
+    kmeans(centers = k, nstart = 30)
+  
+  kmeans_out <- tibble(
+    clusters = k,
+    total_wss = kmeans_results$tot.withinss
+  )
+  return(kmeans_out)
+}
+
+# number of clusters to search over
+n_clusters_search <- 2:12
+
+# iterate over each k to compute total wss
+kmeans_search <- n_clusters_search |> 
+  map(gapminder_kmeans) |> 
+  bind_rows()
+
+kmeans_search |> 
+  ggplot(aes(x = clusters, y = total_wss)) +
+  geom_line() + 
+  geom_point(size = 4) +
+  scale_x_continuous(breaks = n_clusters_search)
+
+
 ```
 
 
