@@ -154,7 +154,7 @@ wnba_shots |>
   group_by(shooting_team) |> 
   summarise(freq = n(),
     total_shots_made = sum(made_shot)) |> 
-  mutate(prop = round(total_shots_made / freq, 3),
+  mutate(prop = (round(total_shots_made / freq, 3) * 100),
     shooting_team = fct_reorder(shooting_team, prop)) |>
   ggplot(aes(y = shooting_team, x = prop)) +
   geom_col(aes(fill = shooting_team)) +
@@ -172,7 +172,8 @@ wnba_shots |>
         #axis.ticks.x=element_blank(),
         legend.position = "none",
         plot.title = element_text(hjust = 0.5, face = "bold"), 
-        axis.text.x = element_text(size = 10, vjust = 0.65),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
         axis.text.y = element_text(size = 10), 
         axis.title = element_text(size = 15),
         strip.text = element_text(size = 15))
@@ -192,19 +193,19 @@ playoff1 <- wnba_shots |>
   summarise(freq = n(),
     total_shots_made = sum(made_shot),
     total_points = sum(shot_value)) |> 
-  mutate(prop = round(total_shots_made / freq, 3))
+  mutate(prop = (round(total_shots_made / freq, 3)) * 100) 
   
 
 playoff1 |> 
-  filter(freq >= 18, prop > 0.5) |> 
+  filter(freq >= 18, prop > 50) |> 
   arrange(desc(prop)) |> 
   head(n = 10) |> 
   ggplot(aes(y = reorder(shooter, prop), x = prop)) +
   geom_col(fill = "#E77500") +
   theme_bw() +
   geom_label(aes(label = prop), size = 4, label.size = 0.5, fontface = "bold") +
-  geom_text(aes(label = freq), x = 0.03, fontface = "bold") +
-  geom_text(label = "shots", x = 0.08, fontface = "bold") +
+  geom_text(aes(label = freq), x = 5, fontface = "bold", color = "white") +
+  geom_text(label = "shots", x = 10, fontface = "bold", color = "white") +
   labs(
     title = "",
     x = "Shooting Percentage",
@@ -214,7 +215,8 @@ playoff1 |>
     Data Courtesy of Wehoop"
   ) +
   theme(plot.title = element_text(hjust = 0.5, face= "bold"),
-        axis.text.x = element_text(size = 10, vjust = 0.65),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
         axis.text.y = element_text(size = 10), 
         axis.title = element_text(size = 15),
         strip.text = element_text(size = 15))
@@ -236,26 +238,27 @@ playoff1 |>
 
 ```{r}
 playoff1 |> 
-  filter(freq >= 18, prop < 0.4) |> 
+  filter(freq >= 18, prop < 40) |> 
   arrange(prop) |> 
   head(n = 10) |> 
   ggplot(aes(y = reorder(shooter, -prop), x = prop)) +
   geom_col(fill = "#E77500") +
   geom_label(aes(label = prop), size = 4, label.size = 0.5, fontface = "bold") +
-  geom_text(aes(label = freq), x = 0.01, fontface = "bold") +
-  geom_text(label = "shots", x = 0.035, fontface = "bold") +
+  geom_text(aes(label = freq), x = 2, fontface = "bold", color = "white") +
+  geom_text(label = "shots", x = 5, fontface = "bold", color = "white") +
   theme_bw() +
   labs(
     title = "",
     x = "Shooting Percentage",
     y = "Player",
     caption = "Minimum of 18 shot attempts
-    
+
     Data Courtesy of Wehoop"
   )  +
   theme(plot.title = element_text(hjust = 0.5, face= "bold"),
-        axis.text.x = element_text(size = 10, vjust = 0.65),
-        axis.text.y = element_text(size = 10), 
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size = 10),
         axis.title = element_text(size = 15),
         strip.text = element_text(size = 15))
 
@@ -320,7 +323,7 @@ free_throw <- free_throw |>
   group_by(shooter) |>
   summarise(num_shots = n(),
             shots_made = sum(made_shot),
-            shooting_perc = shots_made / num_shots) |>
+            shooting_perc = round(shots_made / num_shots, 3) * 100) |>
   mutate(season = "Free Throw")
 
   
@@ -329,15 +332,15 @@ season <- wnba_shots |>
   group_by(shooter, game_type) |>
   summarise(num_shots = n(),
             shots_made = sum(made_shot),
-            shooting_perc = shots_made / num_shots) |>
+            shooting_perc = round(shots_made / num_shots, 3) * 100) |>
   mutate(season = ifelse(game_type == 2, "Regular Season", "Playoffs"))
 
 shot_perc_table <- full_join(season, free_throw)
 
-shot_avg_perc <- 0.44
+shot_avg_perc <- 44
   
 shot_perc_table |> 
-  filter(shooter == "A'ja Wilson") |> 
+  filter(shooter == "Sabrina Ionescu") |> 
   ggplot(aes(shooter, shooting_perc, fill = season)) +
   geom_col(position = "dodge", color = "black") +
   geom_hline(yintercept = shot_avg_perc, size = 1, color = "purple2", linetype = "dashed") +
@@ -345,7 +348,7 @@ shot_perc_table |>
     title = "",
     y = "Shooting Percentage",
     x = "Player",
-    caption = "Regular Season Shooting Percentage: 0.44
+    caption = "Regular Season Shooting Percentage: 44%
     
     Data Courtesy of Wehoop",
     fill = "Shooting Percentage \nType"
@@ -377,14 +380,14 @@ wnba_shots |>
   group_by(time_group, shooting_team) |> 
   summarise(num_shots = n(), 
             total_shots_made = sum(made_shot)) |> 
-  mutate(prop = round(total_shots_made / num_shots, 3)) |>
+  mutate(prop = (round(total_shots_made / num_shots, 3)) * 100) |>
   ggplot(aes(x = time_group, y = prop)) +
   geom_line(alpha = 0.4, color = "orange1") +
   geom_smooth(color = "#E77500", alpha = 0.2, se = FALSE) +
-  geom_hline(yintercept = 0.44, color = "purple2", size = 1, linetype = "dashed") +
+  geom_hline(yintercept = 44, color = "purple2", size = 1, linetype = "dashed") +
   facet_wrap(~ shooting_team) +
   scale_x_reverse() +
-  scale_y_continuous(breaks = c(0.25, 0.5, 0.75)) +
+  scale_y_continuous(breaks = c(0, 25, 50, 75, 100)) +
   theme_bw() +
   labs(
     title = "Time Series of Goal Percentage in a Game (Regular Season)",
@@ -410,14 +413,14 @@ wnba_shots |>
   group_by(time_group, shooting_team) |> 
   summarise(num_shots = n(), 
             total_shots_made = sum(made_shot)) |> 
-  mutate(prop = round(total_shots_made / num_shots, 3)) |> 
+  mutate(prop = (round(total_shots_made / num_shots, 3)) * 100) |> 
   ggplot(aes(x = time_group, y = prop)) +
   geom_line(alpha = 0.4, color = "orange1") +
   geom_smooth(color = "#E77500", alpha = 0.2, se = FALSE) +
-  geom_hline(yintercept = 0.44, color = "purple2", size = 1, linetype = "dashed") +
+  geom_hline(yintercept = 44, color = "purple2", size = 1, linetype = "dashed") +
   facet_wrap(vars(shooting_team)) +
   scale_x_reverse() +
-  scale_y_continuous(breaks = c(0, 0.25, 0.5, 0.75, 1), limits = c(0, 1)) +
+  scale_y_continuous(breaks = c(0, 25, 50, 75, 100), limits = c(0, 100)) +
   theme_bw() +
   labs(
     title = "",
@@ -428,7 +431,8 @@ wnba_shots |>
   theme(
     legend.position = "none",
     plot.title = element_text(size = 16, hjust = 0.5, face= "bold"),
-    axis.text.x = element_text(size = 10, vjust = 0.65),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
     axis.text.y = element_text(size = 10), 
     axis.title = element_text(size = 15),
     strip.text = element_text(size = 15)
@@ -544,13 +548,13 @@ wnba_shots |>
   group_by(time_group) |> 
   summarise(num_shots = n(), 
             total_shots_made = sum(made_shot)) |> 
-  mutate(prop = round(total_shots_made / num_shots, 3)) |>
+  mutate(prop = (round(total_shots_made / num_shots, 3)) * 100) |>
   ggplot(aes(x = time_group, y = prop)) +
   geom_line(alpha = 0.3, color = "orange1") +
   geom_line(stat = "smooth", alpha = 0.8, linewidth = 1.5, color = "#E77500") +
   # geom_smooth(alpha = 0.2, se = FALSE) +
-  geom_hline(yintercept = 0.44, color = "purple2", size = 1, linetype = "dashed") +
-  geom_text(aes(x = 42, y = shot_avg_perc, vjust = -0.5, hjust = 1), label = "Regular Season Shooting Percentage: 0.44") +
+  geom_hline(yintercept = 44, color = "purple2", size = 1, linetype = "dashed") +
+  geom_text(aes(x = 42, y = shot_avg_perc, vjust = -0.5, hjust = 1), label = "Regular Season Shooting Percentage: 44%") +
   # facet_wrap(~ shooting_team) +
   scale_x_reverse() +
   theme_bw() +
@@ -717,10 +721,10 @@ cluster_playoff2 |>
   coord_fixed() +
   theme_bw() +
   labs(
-    x = "Shooting Precentage",
+    x = "Shooting Percentage",
     y = "Points Per Game",
     color = "Player Clusters",
-    title = "Impact Players in Playoffs",
+    title = "",
     caption = "Data Courtesy of Wehoop"
   ) +
    theme(
