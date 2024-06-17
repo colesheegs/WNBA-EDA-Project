@@ -116,12 +116,6 @@ wnba_shots |>
 
 ```{r}
 
-```
-
-
-
-```{r}
-
 wnba_shots |> 
   filter(game_type == 2) |> 
   group_by(shooting_team) |> 
@@ -271,10 +265,103 @@ playoff1 |>
 
 
 ```{r}
+wnba_shots2 <- wnba_pbp |> 
+  filter(shooting_play) |> 
+  # make a column to indicate the shooting team
+  mutate(shooting_team = ifelse(team_id == home_team_id, 
+                                home_team_name,
+                                away_team_name)) |> 
+  select(game_id, game_play_number, game_type = season_type,
+         desc = text, shot_type = type_text, 
+         made_shot = scoring_play, shot_value = score_value, 
+         coordinate_x, coordinate_y, shooting_team, 
+         home_team_name, away_team_name, home_score, away_score, qtr,
+         quarter_seconds_remaining = start_quarter_seconds_remaining,
+         game_seconds_remaining = start_game_seconds_remaining)
+
+wnba_shots2 <- wnba_shots2 |> 
+  filter(shooting_team %in% c("Seattle", "Chicago", "Washington", "Atlanta", "Minnesota", "Indiana", "Los Angeles", "Connecticut", "Dallas", "Phoenix", "New York", "Las Vegas")) |> 
+  mutate(made_shot = ifelse(made_shot == "TRUE", 1, 0)) |> 
+  mutate(
+    # take the absolute value of the x coordinate to only get one side of the court
+    coordinate_x = abs(coordinate_x),
+    # rename shooting_team to include team name
+    shooting_team = case_match(
+      shooting_team,
+      "Atlanta" ~ "Atlanta Dream",
+      "Chicago" ~ "Chicago Sky",
+      "Connecticut" ~ "Connecticut Sun",
+      "Dallas" ~ "Dallas Wings",
+      "Indiana" ~ "Indiana Fever",
+      "Las Vegas" ~ "Las Vegas Aces",
+      "Los Angeles" ~ "Los Angeles Spark",
+      "Minnesota" ~ "Minnesota Lynx",
+      "New York" ~ "New York Liberty",
+      "Phoenix" ~ "Phoenix Mercury",
+      "Seattle" ~ "Seattle Storm",
+      "Washington" ~ "Washington Mystics"
+    ),
+    shooter = ifelse(
+      str_detect(desc, "blocks") == TRUE,
+      sub(
+        ".*?\\b(?:blocks)\\W+(\\w+(?:\\W+\\w+){0,2})\\b(?:'s| 's| B. 's)\\s.*",
+        "\\1",
+        desc,
+        perl = TRUE
+      ),
+      sub("\\ makes.*|\\ misses.*|\\ B. makes.*|\\ B. misses.*", "\\1", desc)
+    )
+  )
+
+free_throw <- wnba_shots2[grep('Free Throw', wnba_shots2$shot_type),]
+
+free_throw <- free_throw |> 
+  select(game_type, made_shot, shooter) |>
+  group_by(shooter) |>
+  summarise(num_shots = n(),
+            shots_made = sum(made_shot),
+            shooting_perc = shots_made / num_shots) |>
+  mutate(season = "Free Throw")
+
+  
+season <- wnba_shots |> 
+  select(game_type, made_shot, shooter) |>
+  group_by(shooter, game_type) |>
+  summarise(num_shots = n(),
+            shots_made = sum(made_shot),
+            shooting_perc = shots_made / num_shots) |>
+  mutate(season = ifelse(game_type == 2, "Regular Season", "Playoffs"))
+
+shot_perc_table <- full_join(season, free_throw)
+  
+shot_perc_table |> 
+  filter(shooter == "A'ja Wilson") |> 
+  ggplot(aes(shooter, shooting_perc, fill = season)) +
+  geom_col(position = "dodge", color = "black") +
+  geom_hline(yintercept = shot_avg_perc, size = 1, color = "purple2", linetype = "dashed") +
+    labs(
+    title = "",
+    y = "Shooting Percentage",
+    x = "Player",
+    caption = "Regular Season Shooting Percentage: 0.44
+    
+    Data Courtesy of Wehoop",
+    fill = "Shooting Percentage \nType"
+  ) +
+  scale_fill_manual(values = c("orange1", "lightblue2", "navyblue")) +
+  theme(plot.title = element_text(hjust = 0.5, face= "bold"),
+        axis.text.x = element_text(size = 10, vjust = 0.65),
+        axis.text.y = element_text(size = 10), 
+        axis.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+
+```
+
+
+
+```{r}
 wnba_shots <- wnba_shots |> 
   mutate(time_group = game_seconds_remaining %/% 30)
-
-# wnba_shots2 <- wnba_shots2[!grepl('Free Throw', wnba_shots$shot_type),]
 ```
 
 
